@@ -1,6 +1,6 @@
 # Offline mode
 
-[X-GPS mobile apps](../../User%20Documentation/User%20guide/X-GPS%20mobile%20apps/X-GPS%20Tracker/..../X-GPS%20mobile%20apps.md) > [X-GPS Tracker](../../User%20Documentation/User%20guide/X-GPS%20mobile%20apps/X-GPS%20Tracker.md)
+[X-GPS mobile apps](../../../../User%20Documentation/User%20guide/X-GPS%20mobile%20apps/X-GPS%20Tracker/..../X-GPS%20mobile%20apps.md) > [X-GPS Tracker](../../../../User%20Documentation/User%20guide/X-GPS%20mobile%20apps/X-GPS%20Tracker.md)
 
 ## Offline mode
 
@@ -11,7 +11,7 @@ Employees can finish their tasks without having to worry about good GSM connecti
 
 To enable Offline mode, go to the application settings, the advanced settings tab and toggle the "Offline mode" toggle switch (disabled by default).
 
-![image-20250304-170633.png](../../User%20Documentation/User%20guide/X-GPS%20mobile%20apps/X-GPS%20Tracker/....../attachments/00ec78fa-16a0-4eb4-9369-fe2dfc849f4b.png)
+![image-20250304-170633.png](../../../../User%20Documentation/User%20guide/X-GPS%20mobile%20apps/X-GPS%20Tracker/....../attachments/00ec78fa-16a0-4eb4-9369-fe2dfc849f4b.png)
 
 #### Offline mode performance details
 

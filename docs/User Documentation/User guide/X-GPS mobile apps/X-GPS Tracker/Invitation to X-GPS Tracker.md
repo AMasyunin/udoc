@@ -1,6 +1,6 @@
 # Invitation to X-GPS Tracker
 
-[X-GPS mobile apps](../../User%20Documentation/User%20guide/X-GPS%20mobile%20apps/X-GPS%20Tracker/..../X-GPS%20mobile%20apps.md) > [X-GPS Tracker](../../User%20Documentation/User%20guide/X-GPS%20mobile%20apps/X-GPS%20Tracker.md)
+[X-GPS mobile apps](../../../../User%20Documentation/User%20guide/X-GPS%20mobile%20apps/X-GPS%20Tracker/..../X-GPS%20mobile%20apps.md) > [X-GPS Tracker](../../../../User%20Documentation/User%20guide/X-GPS%20mobile%20apps/X-GPS%20Tracker.md)
 
 ## Invitation to X-GPS Tracker
 
@@ -13,7 +13,7 @@ The activation process is common for both iOS and Android devices.
 1. **Login to the user account.**
 2.  **Click ‘Device activation’ icon** in the application bar.
 
-    ![image-20250304-171019.png](../../User%20Documentation/User%20guide/X-GPS%20mobile%20apps/X-GPS%20Tracker/....../attachments/c4bc9e16-846c-4313-819a-b470e1d1c72d.png)
+    ![image-20250304-171019.png](../../../../User%20Documentation/User%20guide/X-GPS%20mobile%20apps/X-GPS%20Tracker/....../attachments/c4bc9e16-846c-4313-819a-b470e1d1c72d.png)
 3. **Enter object name**, e.g. My phone, and select **X-GPS Tracker** model.
 4. **Enter the email address** or **phone number** to receive an **invitation** with the link for mobile app download.
 5. **Follow the link** and click **'Continue'**.

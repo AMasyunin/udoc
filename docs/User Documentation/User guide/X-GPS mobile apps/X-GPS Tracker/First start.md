@@ -1,6 +1,6 @@
 # First start
 
-[X-GPS mobile apps](../../User%20Documentation/User%20guide/X-GPS%20mobile%20apps/X-GPS%20Tracker/..../X-GPS%20mobile%20apps.md) > [X-GPS Tracker](../../User%20Documentation/User%20guide/X-GPS%20mobile%20apps/X-GPS%20Tracker.md)
+[X-GPS mobile apps](../../../../User%20Documentation/User%20guide/X-GPS%20mobile%20apps/X-GPS%20Tracker/..../X-GPS%20mobile%20apps.md) > [X-GPS Tracker](../../../../User%20Documentation/User%20guide/X-GPS%20mobile%20apps/X-GPS%20Tracker.md)
 
 ## First start
 

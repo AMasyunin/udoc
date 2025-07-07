@@ -102,7 +102,6 @@
     * [Specialized sensors by manufacturer](devices-and-settings/vehicle-sensors-1/specialized-sensors-by-manufacturer-1/README.md)
       * [Galileosky sensors](<User Documentation/User guide/Devices and settings/Vehicle sensors/Specialized sensors by manufacturer/Galileosky sensors.md>)
       * [Teltonika sensors](<User Documentation/User guide/Devices and settings/Vehicle sensors/Specialized sensors by manufacturer/Teltonika sensors.md>)
-* [Fleet management](<User Documentation/User guide/Fleet management.md>)
 * [Reports](<User Documentation/User guide/Reports.md>)
 * [X-GPS mobile apps](<User Documentation/User guide/X-GPS mobile apps.md>)
 * [Video monitoring](video-monitoring/README.md)

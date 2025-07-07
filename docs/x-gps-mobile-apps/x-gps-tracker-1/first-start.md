@@ -1,9 +1,10 @@
-
-[X-GPS mobile apps](..\..\X-GPS%20mobile%20apps.md) > [X-GPS Tracker](..\X-GPS%20Tracker.md)
-
 # First start
 
-### Tracker ID
+[X-GPS mobile apps](../../User%20Documentation/User%20guide/X-GPS%20mobile%20apps/X-GPS%20Tracker/..../X-GPS%20mobile%20apps.md) > [X-GPS Tracker](../../User%20Documentation/User%20guide/X-GPS%20mobile%20apps/X-GPS%20Tracker.md)
+
+## First start
+
+#### Tracker ID
 
 At the first start the application will ask you to enter the **device ID**. You can find it in the invitation received in the SMS message or e-mail.
 
@@ -11,7 +12,7 @@ Please note that this step will be skipped if you started the application by cli
 
 If you lost or deleted the invitation, you can find the ID in the web interface in a special widget.
 
-### Basic settings and permissions
+#### Basic settings and permissions
 
 Next, the application will notify you of the need to allow it access to the location of the device. Click **"Allow"** in the pop-up window that appears after clicking **"Continue"**
 

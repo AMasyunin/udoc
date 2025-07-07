@@ -1,6 +1,6 @@
 # Report types
 
-[Reports](../User%20Documentation/User%20guide/Reports.md)
+[Reports](../../../User%20Documentation/User%20guide/Reports.md)
 
 ## Report types
 
@@ -47,11 +47,11 @@ Transport usage reports allow you to monitor how your vehicles and their resourc
 
 * **Engine hours**\
   Displays detailed information on engine hours, both in motion and idling, along with activity diagrams and histograms. Read more:
-  * [Engine hours report](../User%20Documentation/User%20guide/Reports/Specific%20report%20details/Engine%20hours%20report.md)
+  * [Engine hours report](../../../User%20Documentation/User%20guide/Reports/Specific%20report%20details/Engine%20hours%20report.md)
 * **Fuel volume**\
   Provides data on fuel consumption, fillings, and drains, along with initial and final fuel volumes. Read more:
-  * [Fuel volume report](../User%20Documentation/User%20guide/Reports/Specific%20report%20details/Fuel%20volume%20report.md)
-  * [Fuel control in Navixy](../User%20Documentation/User%20guide/Reports/....../Expert%20Center/Expert%20Center/Vehicle%20telematics%20technology/Fuel%20management/Fuel%20control%20in%20Navixy.md)
+  * [Fuel volume report](../../../User%20Documentation/User%20guide/Reports/Specific%20report%20details/Fuel%20volume%20report.md)
+  * [Fuel control in Navixy](../../../User%20Documentation/User%20guide/Reports/....../Expert%20Center/Expert%20Center/Vehicle%20telematics%20technology/Fuel%20management/Fuel%20control%20in%20Navixy.md)
 * **Flow meter**\
   Focuses on fuel consumption data gathered from flow meters, without showing fuel levels at specific times.
 * **Vehicle sensors**\
@@ -64,8 +64,8 @@ These reports are essential for monitoring driver behavior, particularly in rela
 
 * **Speed violation**\
   Details instances where the vehicle exceeded the speed limit, including date, location, and actual speed. See also:
-  * [Harsh driving](../User%20Documentation/User%20guide/Rules%20and%20notifications/Safety/Harsh%20driving.md)
-  * [Eco Driving](../User%20Documentation/User%20guide/Fleet%20management/Eco%20Driving.md)
+  * [Harsh driving](../../../User%20Documentation/User%20guide/Rules%20and%20notifications/Safety/Harsh%20driving.md)
+  * [Eco Driving](../../../User%20Documentation/User%20guide/Fleet%20management/Eco%20Driving.md)
 
 #### Device status reports
 
@@ -73,10 +73,10 @@ Device status reports provide insights into the operational status of your track
 
 * **Device Switching ON/OFF**\
   Tracks instances where the GPS device was manually switched on or off. See also:
-  * [Device switched ON/OFF](../User%20Documentation/User%20guide/Rules%20and%20notifications/Device%20power/Device%20switched%20ON_OFF.md)
+  * [Device switched ON/OFF](../../../User%20Documentation/User%20guide/Rules%20and%20notifications/Device%20power/Device%20switched%20ON_OFF.md)
 * **GSM Connection Lost**\
   Reports periods where the GPS device lost its GSM connection, indicating a lack of communication with the monitoring server. See also:
-  * [Device lost connection](../User%20Documentation/User%20guide/Rules%20and%20notifications/Device%20connection/Device%20lost%20connection.md)
+  * [Device lost connection](../../../User%20Documentation/User%20guide/Rules%20and%20notifications/Device%20connection/Device%20lost%20connection.md)
 
 ### Connected devices reports
 
@@ -86,7 +86,7 @@ These reports focus on the sensors and equipment connected to your tracking devi
   Provides detailed history of sensor readings, such as temperature, fuel levels, and voltage.
 * **Equipment working time**\
   Tracks the activity and idle time of equipment connected to the tracking device via digital inputs. Read more:
-  * [Equipment working time report](../User%20Documentation/User%20guide/Reports/Specific%20report%20details/Equipment%20working%20time%20report.md)
+  * [Equipment working time report](../../../User%20Documentation/User%20guide/Reports/Specific%20report%20details/Equipment%20working%20time%20report.md)
 
 ### Business reports
 

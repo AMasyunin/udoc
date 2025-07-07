@@ -4,15 +4,15 @@
 
 The Fleet Management section within Navixy platform offers streamlined management of your organization's vehicles, providing detailed insights and control over all aspects of your fleet, from fuel consumption to vehicle specifications, to enhance your operational efficiency.
 
-![image-20240814-173711.png](User%20Documentation/attachments/a880d13d-a368-4e4d-91f5-aef18e01ef03.png)
+![image-20240814-173711.png](../../User%20Documentation/attachments/a880d13d-a368-4e4d-91f5-aef18e01ef03.png)
 
-* [Vehicles](User%20Documentation/User%20guide/Fleet%20management/Vehicles.md)
-* [Garages](User%20Documentation/User%20guide/Fleet%20management/Garages.md)
-* [Drivers](User%20Documentation/User%20guide/Fleet%20management/Drivers.md)
-* [Departments](User%20Documentation/User%20guide/Fleet%20management/Departments.md)
-* [Driver journal](User%20Documentation/User%20guide/Fleet%20management/Driver%20journal.md)
-* [Eco Driving](User%20Documentation/User%20guide/Fleet%20management/Eco%20Driving.md)
-* [Maintenance](User%20Documentation/User%20guide/Fleet%20management/Maintenance.md)
+* [Vehicles](../../User%20Documentation/User%20guide/Fleet%20management/Vehicles.md)
+* [Garages](../../User%20Documentation/User%20guide/Fleet%20management/Garages.md)
+* [Drivers](../../User%20Documentation/User%20guide/Fleet%20management/Drivers.md)
+* [Departments](../../User%20Documentation/User%20guide/Fleet%20management/Departments.md)
+* [Driver journal](../../User%20Documentation/User%20guide/Fleet%20management/Driver%20journal.md)
+* [Eco Driving](../../User%20Documentation/User%20guide/Fleet%20management/Eco%20Driving.md)
+* [Maintenance](../../User%20Documentation/User%20guide/Fleet%20management/Maintenance.md)
 
 All the information about vehicles of your organization is in **Fleet management**.
 
@@ -26,9 +26,9 @@ In this tab it is possible to add and edit vehicles, attach them to the depots a
 
 ### Adding a new vehicle
 
-Press ![chrome\_py0qhiu5p8.webp](User%20Documentation/attachments/997a6ca6-6ba4-4593-a2b1-2a64a0dfdce9.webp) button to add a new vehicle.
+Press ![chrome\_py0qhiu5p8.webp](../../User%20Documentation/attachments/997a6ca6-6ba4-4593-a2b1-2a64a0dfdce9.webp) button to add a new vehicle.
 
-Button ![image-20241127-142058.png](User%20Documentation/attachments/533f887e-affa-4183-bb7f-140fc208ae02.png) allows adding an image of the vehicle.
+Button ![image-20241127-142058.png](../../User%20Documentation/attachments/533f887e-affa-4183-bb7f-140fc208ae02.png) allows adding an image of the vehicle.
 
 The **Main** tab contains all main information about the vehicle and additional information, such as tags or text notes.
 
@@ -44,6 +44,6 @@ Information on fleet owners is available on the **Garages** tab.
 
 ### Adding a new garage
 
-Press ![chrome\_py0qhiu5p8.webp](User%20Documentation/attachments/997a6ca6-6ba4-4593-a2b1-2a64a0dfdce9.webp) button to add a new garage.
+Press ![chrome\_py0qhiu5p8.webp](../../User%20Documentation/attachments/997a6ca6-6ba4-4593-a2b1-2a64a0dfdce9.webp) button to add a new garage.
 
 The popup contains its name, address, name of the mechanic and name of the dispatcher. This data can be used for more convenient and efficient task management.

@@ -1,6 +1,6 @@
 # Mettax integration for video telematics
 
-[Platform integrations](../User%20Documentation/User%20guide/Platform%20integrations.md)
+[Platform integrations](../../../User%20Documentation/User%20guide/Platform%20integrations.md)
 
 ## Mettax integration for video telematics
 
@@ -17,7 +17,7 @@ First, you need to make the necessary preparations on the Mettax side.
 1. Log in to a user account that contains actual devices.
 2.  Turn on **Developer** mode to enable the necessary settings for our integration:
 
-    ![Mettax-UI.png](../User%20Documentation/User%20guide/Platform%20integrations/..../attachments/db77df7f-2254-4b77-9728-90a302ccdb8e.png)
+    ![Mettax-UI.png](../../../User%20Documentation/User%20guide/Platform%20integrations/..../attachments/db77df7f-2254-4b77-9728-90a302ccdb8e.png)
 
     1. Click your account name in the upper-right corner of the window.
     2. Go to **Customer Settings**.
@@ -26,12 +26,12 @@ First, you need to make the necessary preparations on the Mettax side.
 3. Install **Webhooks** to establish a connection between the two platforms:
    1.  Click the apps icon and select **Developer**.
 
-       ![image-20250428-102043.png](../User%20Documentation/User%20guide/Platform%20integrations/..../attachments/a05af309-77ff-43ee-8993-6b20078ab42f.png)
+       ![image-20250428-102043.png](../../../User%20Documentation/User%20guide/Platform%20integrations/..../attachments/a05af309-77ff-43ee-8993-6b20078ab42f.png)
    2. Go to **Details**.
    3. Open the **WEBHOOK** tab.
    4.  Find these three webhooks, you will need to edit them:
 
-       ![Mettax-webhooks.png](../User%20Documentation/User%20guide/Platform%20integrations/..../attachments/ef25b21f-91e5-48ca-adf8-fe97143c1f1f.png)
+       ![Mettax-webhooks.png](../../../User%20Documentation/User%20guide/Platform%20integrations/..../attachments/ef25b21f-91e5-48ca-adf8-fe97143c1f1f.png)
 
        1. **pushDeviceInfo**
        2. **pushAlarm**
@@ -55,14 +55,14 @@ The platform handles perfectly the GPS functionality of video devices and their 
 4. Enter a correct **Device ID**
 5. Complete the device configuration
 
-For detailed instructions on how to activate a device in Navixy, see [Activate GPS device](../User%20Documentation/User%20guide/Quick%20start/Activate%20GPS%20device.md).
+For detailed instructions on how to activate a device in Navixy, see [Activate GPS device](../../../User%20Documentation/User%20guide/Quick%20start/Activate%20GPS%20device.md).
 
 > \[!TIP] Your device and Navixy account are ready for the integration!
 
 ### 3. Embedding Mettax in Navixy UI
 
 At this step, we perform the actual integration.\
-Navixy offers [User applications](../User%20Documentation/User%20guide/Account/User%20applications.md) functionality that allows embedding 3rd-party apps directly in the platform’s interface. We will use it to embed Mettax.
+Navixy offers [User applications](../../../User%20Documentation/User%20guide/Account/User%20applications.md) functionality that allows embedding 3rd-party apps directly in the platform’s interface. We will use it to embed Mettax.
 
 > \[!NOTE] **Navigation**
 >
@@ -72,7 +72,7 @@ Navixy offers [User applications](../User%20Documentation/User%20guide/Account/U
 > 2. In the settings sidebar, select **User applications**
 
 1. Create new application\
-   Start by clicking the ![chrome\_py0qhiu5p8.webp](../User%20Documentation/User%20guide/Platform%20integrations/..../attachments/b3ded703-0550-4cb5-b1e6-d1e591717225.jpg) button in the **User applications** list.
+   Start by clicking the ![chrome\_py0qhiu5p8.webp](../../../User%20Documentation/User%20guide/Platform%20integrations/..../attachments/b3ded703-0550-4cb5-b1e6-d1e591717225.jpg) button in the **User applications** list.
 2. Configure the new application
    1. Put [https://www.mettaxiot.com/#/dashboard](https://www.mettaxiot.com/#/dashboard) in the **App URL** field.
    2. Enter a **Label** for the application (e.g., Mettax dashboard).
@@ -81,4 +81,4 @@ Navixy offers [User applications](../User%20Documentation/User%20guide/Account/U
 
 > \[!TIP] Your new application appears automatically in Navixy’s left sidebar. Open it and log in with your Mettax credentials.
 >
-> <img src="../User%20Documentation/User%20guide/Platform%20integrations/..../attachments/f3116740-e5e5-45de-a3c3-de0f40f8d520.png" alt="image-20250428-113317.png" data-size="original">
+> <img src="../../../User%20Documentation/User%20guide/Platform%20integrations/..../attachments/f3116740-e5e5-45de-a3c3-de0f40f8d520.png" alt="image-20250428-113317.png" data-size="original">

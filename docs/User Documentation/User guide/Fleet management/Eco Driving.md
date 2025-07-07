@@ -1,6 +1,6 @@
 # Eco Driving
 
-[Fleet management](../User%20Documentation/User%20guide/Fleet%20management.md)
+[Fleet management](../../../User%20Documentation/User%20guide/Fleet%20management.md)
 
 ## Eco Driving
 
@@ -8,7 +8,7 @@ The **Eco Driving report** in Navixy is a powerful tool designed to analyze and 
 
 To access the Eco Driving report, navigate to the **Fleet Management app** and select the **"Eco-Driving" tab.**
 
-![image-20240814-183737.png](../User%20Documentation/User%20guide/Fleet%20management/..../attachments/97757bb5-29b7-498c-95df-d610b2fab90d.png)
+![image-20240814-183737.png](../../../User%20Documentation/User%20guide/Fleet%20management/..../attachments/97757bb5-29b7-498c-95df-d610b2fab90d.png)
 
 ### Understanding penalty points
 
@@ -18,7 +18,7 @@ Penalty points are a key component of the Eco Driving report, allowing you to ga
 
 The Eco Driving report can be tailored to fit your specific needs, enabling you to set your own criteria for what constitutes a violation and how severe it is. You can assign different penalty points to various infractions, allowing you to prioritize certain aspects of driving behavior according to your organization’s standards.
 
-![image-20240814-183612.png](../User%20Documentation/User%20guide/Fleet%20management/..../attachments/e4632636-699a-4571-b31d-b4d00e99a31a.png)
+![image-20240814-183612.png](../../../User%20Documentation/User%20guide/Fleet%20management/..../attachments/e4632636-699a-4571-b31d-b4d00e99a31a.png)
 
 **Key features**
 

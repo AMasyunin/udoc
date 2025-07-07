@@ -1,12 +1,12 @@
 # Drivers
 
-[Fleet management](../User%20Documentation/User%20guide/Fleet%20management.md)
+[Fleet management](../../../User%20Documentation/User%20guide/Fleet%20management.md)
 
 ## Drivers
 
 The **Drivers** section in the Navixy platform is designed to help fleet managers efficiently manage and monitor their drivers. This section allows you to create and manage detailed driver profiles, linking them to specific objects in your fleet. By maintaining comprehensive driver records, you can streamline fleet operations, improve driver accountability, and enhance overall fleet performance.
 
-![image-20240814-180004.png](../User%20Documentation/User%20guide/Fleet%20management/..../attachments/07c70c1c-4d69-499b-b8fd-71056dc33d17.png)
+![image-20240814-180004.png](../../../User%20Documentation/User%20guide/Fleet%20management/..../attachments/07c70c1c-4d69-499b-b8fd-71056dc33d17.png)
 
 ### Driver list
 

@@ -1,6 +1,6 @@
 # Working statuses widget
 
-[Devices and settings](../../User%20Documentation/User%20guide/Devices%20and%20settings/Object%20management/..../Devices%20and%20settings.md) > [Object management](../../User%20Documentation/User%20guide/Devices%20and%20settings/Object%20management.md)
+[Devices and settings](../../../../User%20Documentation/User%20guide/Devices%20and%20settings/Object%20management/..../Devices%20and%20settings.md) > [Object management](../../../../User%20Documentation/User%20guide/Devices%20and%20settings/Object%20management.md)
 
 ## Working statuses widget
 

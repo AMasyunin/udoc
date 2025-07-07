@@ -1,12 +1,12 @@
 # Maintenance
 
-[Fleet management](../User%20Documentation/User%20guide/Fleet%20management.md)
+[Fleet management](../../../User%20Documentation/User%20guide/Fleet%20management.md)
 
 ## Maintenance
 
 The **Maintenance works** functionality within the Navixy Fleet Management application is a comprehensive tool designed to manage vehicle service tasks efficiently. This guide explains how to create, manage, and monitor service tasks to keep your fleet in top condition.
 
-![image-20240814-185130.png](../User%20Documentation/User%20guide/Fleet%20management/..../attachments/fd1d71c9-6b82-4b53-a137-b5154a199f0a.png)
+![image-20240814-185130.png](../../../User%20Documentation/User%20guide/Fleet%20management/..../attachments/fd1d71c9-6b82-4b53-a137-b5154a199f0a.png)
 
 ### Add service work
 
@@ -48,7 +48,7 @@ After creating service tasks, you may need to modify, remove, or duplicate them.
 
 Streamline your fleet's maintenance by configuring repeatable tasks, a feature that automatically generates new service tasks at predefined intervals. Follow these steps to set it up.
 
-![image-20240814-190748.png](../User%20Documentation/User%20guide/Fleet%20management/..../attachments/a1bf88b6-07a2-4885-9732-94fd4b960f3f.png)
+![image-20240814-190748.png](../../../User%20Documentation/User%20guide/Fleet%20management/..../attachments/a1bf88b6-07a2-4885-9732-94fd4b960f3f.png)
 
 1. **Activate auto-repeat:**
    * Turn on the **Auto-repeat** option by toggling the switch.
@@ -76,6 +76,6 @@ Monitor your fleet's maintenance activities effectively with the comprehensive s
 * **Completed:** Tasks that have been finished.
 * **Expired:** Tasks that were not completed on time.
 
-![image-20240814-191110.png](../User%20Documentation/User%20guide/Fleet%20management/..../attachments/69c76fe5-0748-41cf-8ab1-88cded9ac031.png)
+![image-20240814-191110.png](../../../User%20Documentation/User%20guide/Fleet%20management/..../attachments/69c76fe5-0748-41cf-8ab1-88cded9ac031.png)
 
 The dashboard offers a concise summary, allowing you to instantly view the status of all maintenance tasks at a glance.

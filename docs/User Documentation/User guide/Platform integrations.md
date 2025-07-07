@@ -12,4 +12,4 @@ Explore our growing ecosystem of supported 3rd-party platforms below. Each integ
 
 Select a platform from the list below to learn more about its specific integration process:
 
-* [Mettax integration for video telematics](../User%20Documentation/User%20guide/Platform%20integrations/Mettax%20integration%20for%20video%20telematics.md): Video telematics solution that enhances your fleet monitoring capabilities while maintaining access to Navixy's comprehensive GPS tracking features.
+* [Mettax integration for video telematics](../../User%20Documentation/User%20guide/Platform%20integrations/Mettax%20integration%20for%20video%20telematics.md): Video telematics solution that enhances your fleet monitoring capabilities while maintaining access to Navixy's comprehensive GPS tracking features.

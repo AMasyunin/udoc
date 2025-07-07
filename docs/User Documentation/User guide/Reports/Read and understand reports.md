@@ -1,6 +1,6 @@
 # Read and understand reports
 
-[Reports](../User%20Documentation/User%20guide/Reports.md)
+[Reports](../../../User%20Documentation/User%20guide/Reports.md)
 
 ## Read and understand reports
 

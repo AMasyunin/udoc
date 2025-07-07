@@ -1,10 +1,10 @@
 # Departments
 
-[Fleet management](../User%20Documentation/User%20guide/Fleet%20management.md)
+[Fleet management](../../../User%20Documentation/User%20guide/Fleet%20management.md)
 
 ## Departments
 
-The "Departments" section in the [Fleet management](../User%20Documentation/User%20guide/Fleet%20management.md) application allows you to organize and manage your fleet by categorizing drivers into specific departments. This structure aids in efficient fleet management, enabling better control over operations, reporting, and task assignments.
+The "Departments" section in the [Fleet management](../../../User%20Documentation/User%20guide/Fleet%20management.md) application allows you to organize and manage your fleet by categorizing drivers into specific departments. This structure aids in efficient fleet management, enabling better control over operations, reporting, and task assignments.
 
 ### Managing departments
 

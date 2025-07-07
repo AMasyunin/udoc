@@ -1,6 +1,6 @@
 # Vehicle sensors
 
-[Devices and settings](../User%20Documentation/User%20guide/Devices%20and%20settings.md)
+[Devices and settings](../../../User%20Documentation/User%20guide/Devices%20and%20settings.md)
 
 ## Vehicle sensors
 
@@ -12,7 +12,7 @@ The **Sensors and buttons** widget is located in the **Devices and settings** se
 
 The widget provides an overview of the number of sensors already connected to the selected device. Expanding the panel lets you add new sensors or edit existing ones.
 
-![image-20240815-205217.png](../User%20Documentation/User%20guide/Devices%20and%20settings/..../attachments/003e2f47-dde3-4653-a052-3516ad95cf76.png)
+![image-20240815-205217.png](../../../User%20Documentation/User%20guide/Devices%20and%20settings/..../attachments/003e2f47-dde3-4653-a052-3516ad95cf76.png)
 
 The number and type of sensors you can connect depend on the GPS device model. For example, certain devices allow you to configure data parameters transmitted via the CAN bus or OBDII diagnostic connector.
 
@@ -28,10 +28,10 @@ To manage your sensors, you can use the following buttons:
 
 Navixy supports various sensor types, including:
 
-* [Discrete sensors](../User%20Documentation/User%20guide/Devices%20and%20settings/Vehicle%20sensors/Discrete%20sensors.md): Used for binary inputs like ignition status, door open/close, etc.
-* [Measurement sensors](../User%20Documentation/User%20guide/Devices%20and%20settings/Vehicle%20sensors/Measurement%20sensors.md): These sensors measure and report continuous values like temperature, fuel level, or engine RPM.
-* [Aggregation sensors](../User%20Documentation/User%20guide/Devices%20and%20settings/Vehicle%20sensors/Aggregation%20sensors.md): Combine data from multiple sources into a single reportable value.
-* [Virtual sensors](../User%20Documentation/User%20guide/Devices%20and%20settings/Vehicle%20sensors/Virtual%20sensors.md): Derived from calculated data or combined sensor values.
+* [Discrete sensors](../../../User%20Documentation/User%20guide/Devices%20and%20settings/Vehicle%20sensors/Discrete%20sensors.md): Used for binary inputs like ignition status, door open/close, etc.
+* [Measurement sensors](../../../User%20Documentation/User%20guide/Devices%20and%20settings/Vehicle%20sensors/Measurement%20sensors.md): These sensors measure and report continuous values like temperature, fuel level, or engine RPM.
+* [Aggregation sensors](../../../User%20Documentation/User%20guide/Devices%20and%20settings/Vehicle%20sensors/Aggregation%20sensors.md): Combine data from multiple sources into a single reportable value.
+* [Virtual sensors](../../../User%20Documentation/User%20guide/Devices%20and%20settings/Vehicle%20sensors/Virtual%20sensors.md): Derived from calculated data or combined sensor values.
 
 #### Copying sensor settings
 

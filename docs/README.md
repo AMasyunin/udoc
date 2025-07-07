@@ -9,7 +9,7 @@ Welcome to the Navixy User Guide, your comprehensive resource for mastering the 
 * [Video monitoring](User%20Documentation/User%20guide/Video%20monitoring.md)
 * \[Platform integrations]\(Platform integrations.md)
 * [Rules and notifications](User%20Documentation/User%20guide/Rules%20and%20notifications.md)
-* [Reports](<User Documentation/User guide/Reports.md>)
+* [Reports](reports-1.md)
 * \[Fleet management]\(Fleet management.md)
 * [Field service](User%20Documentation/User%20guide/Field%20service.md)
 * \[Devices and settings]\(Devices and settings.md)

@@ -1,0 +1,6 @@
+---
+hidden: true
+---
+
+# Video monitoring
+

@@ -7,11 +7,11 @@ Welcome to the Navixy User Guide, your comprehensive resource for mastering the 
 * [GPS Tracking](User%20Documentation/User%20guide/GPS%20Tracking.md)
 * [Geo links](User%20Documentation/User%20guide/Geo%20links.md)
 * [Video monitoring](User%20Documentation/User%20guide/Video%20monitoring.md)
-* \[Platform integrations]\(Platform integrations.md)
+* Platform integrations
 * [Rules and notifications](User%20Documentation/User%20guide/Rules%20and%20notifications.md)
-* [Reports](broken-reference)
-* \[Fleet management]\(Fleet management.md)
+* [Reports](broken-reference/)
+* Fleet management
 * [Field service](User%20Documentation/User%20guide/Field%20service.md)
-* \[Devices and settings]\(Devices and settings.md)
-* \[X-GPS mobile apps]\(X-GPS mobile apps.md)
+* Devices and settings
+* X-GPS mobile apps
 * [F.A.Q.](User%20Documentation/User%20guide/F.A.Q.md)

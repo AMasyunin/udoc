@@ -52,20 +52,61 @@ jobs:
 
       - name: Generate simple navigation
         run: |
-          # Create a simple script to generate TOC from the main page
-          cat > generate_nav.py << 'EOF'
+          # Create navigation generator
+          python3 -c "
           import os
           import re
           
           def extract_headings(filepath):
-              """Extract headings from markdown file to create TOC"""
               try:
                   with open(filepath, 'r', encoding='utf-8') as f:
                       content = f.read()
                       
-                  # Find all headings
                   headings = []
-                  for match in re.finditer(r'^(#{2,4})\s+(.+)
+                  for match in re.finditer(r'^(#{2,4})\s+(.+)$', content, re.MULTILINE):
+                      level = len(match.group(1)) - 1
+                      title = match.group(2).strip()
+                      anchor = re.sub(r'[^\w\s-]', '', title.lower())
+                      anchor = re.sub(r'[-\s]+', '-', anchor).strip('-')
+                      headings.append({
+                          'level': level,
+                          'title': title,
+                          'anchor': anchor
+                      })
+                  
+                  return headings
+              except Exception as e:
+                  print(f'Error reading {filepath}: {e}')
+                  return []
+          
+          nav_html = []
+          if os.path.exists('_site_source/index.md'):
+              headings = extract_headings('_site_source/index.md')
+              
+              print('=== FOUND HEADINGS ===')
+              for h in headings:
+                  print(f'Level {h[\"level\"]}: {h[\"title\"]} -> #{h[\"anchor\"]}')
+              print('=== END HEADINGS ===')
+              
+              nav_html.append('<li><a href=\"#top\">Overview</a></li>')
+              
+              for heading in headings:
+                  indent = '  ' * (heading['level'] - 1)
+                  nav_html.append(f'{indent}<li><a href=\"#{heading[\"anchor\"]}\">{heading[\"title\"]}</a></li>')
+          else:
+              nav_html = [
+                  '<li><a href=\"#top\">Admin Panel Overview</a></li>',
+                  '<li><a href=\"#access\">Access</a></li>',
+                  '<li><a href=\"#features\">Features</a></li>'
+              ]
+          
+          with open('_site_source/_navigation.html', 'w') as f:
+              f.write('\n'.join(nav_html))
+              
+          print('=== GENERATED NAVIGATION HTML ===')
+          print('\n'.join(nav_html))
+          print('=== END NAVIGATION HTML ===')
+          "
 
       - name: Create Jekyll config and layout
         run: |
@@ -96,15 +137,14 @@ jobs:
             - "*.log"
             - Gemfile
             - Gemfile.lock
-            - generate_nav.py
             - SUMMARY.md
           EOF
-          
-          # Create layouts directory
+
+      - name: Create layout
+        run: |
           mkdir -p _site_source/_layouts
           
-          # Create simple, working layout
-          cat > _site_source/_layouts/default.html << 'EOF'
+          cat > _site_source/_layouts/default.html << 'HTMLEOF'
           <!DOCTYPE html>
           <html lang="en">
           <head>
@@ -296,7 +336,6 @@ jobs:
                       text-decoration: underline;
                   }
                   
-                  /* Responsive */
                   @media (max-width: 768px) {
                       body {
                           flex-direction: column;
@@ -327,335 +366,7 @@ jobs:
               </main>
           </body>
           </html>
-          EOF
-
-      - name: Create Gemfile
-        run: |
-          cat > _site_source/Gemfile << 'EOF'
-          source 'https://rubygems.org'
-          
-          gem 'jekyll', '~> 4.3.0'
-          gem 'jekyll-sitemap'
-          gem 'webrick'
-          EOF
-
-      - name: Build with Jekyll
-        run: |
-          cd _site_source
-          bundle install
-          bundle exec jekyll build --destination ../_site --verbose
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build-and-deploy
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4, content, re.MULTILINE):
-                      level = len(match.group(1)) - 1  # h2=1, h3=2, h4=3
-                      title = match.group(2).strip()
-                      anchor = re.sub(r'[^\w\s-]', '', title.lower())
-                      anchor = re.sub(r'[-\s]+', '-', anchor).strip('-')
-                      headings.append({
-                          'level': level,
-                          'title': title,
-                          'anchor': anchor
-                      })
-                  
-                  return headings
-              except Exception as e:
-                  print(f"Error reading {filepath}: {e}")
-                  return []
-          
-          # Check if index.md exists and extract TOC
-          nav_html = []
-          if os.path.exists('_site_source/index.md'):
-              headings = extract_headings('_site_source/index.md')
-              
-              print("=== FOUND HEADINGS ===")
-              for h in headings:
-                  print(f"Level {h['level']}: {h['title']} -> #{h['anchor']}")
-              print("=== END HEADINGS ===")
-              
-              # Generate navigation HTML
-              nav_html.append('<li><a href="#top">Overview</a></li>')
-              
-              for heading in headings:
-                  indent = '  ' * (heading['level'] - 1)
-                  nav_html.append(f'{indent}<li><a href="#{heading["anchor"]}">{heading["title"]}</a></li>')
-          else:
-              # Fallback navigation
-              nav_html = [
-                  '<li><a href="#top">Admin Panel Overview</a></li>',
-                  '<li><a href="#access">Access</a></li>',
-                  '<li><a href="#features">Features</a></li>'
-              ]
-          
-          # Save navigation
-          with open('_site_source/_navigation.html', 'w') as f:
-              f.write('\n'.join(nav_html))
-              
-          print("=== GENERATED NAVIGATION HTML ===")
-          print('\n'.join(nav_html))
-          print("=== END NAVIGATION HTML ===")
-          
-          EOF
-          
-          python3 generate_nav.py
-
-      - name: Create Jekyll config and layout
-        run: |
-          cat > _site_source/_config.yml << 'EOF'
-          title: "Admin Panel Documentation"
-          description: "Administration Guide"
-          baseurl: "/udoc"
-          url: "https://amasyunin.github.io"
-          
-          markdown: kramdown
-          kramdown:
-            input: GFM
-            syntax_highlighter: rouge
-          
-          highlighter: rouge
-          
-          plugins:
-            - jekyll-sitemap
-          
-          include:
-            - README.md
-            - "*.md"
-          
-          exclude:
-            - .gitbook*
-            - book.json
-            - node_modules/
-            - "*.log"
-            - Gemfile
-            - Gemfile.lock
-            - generate_nav.py
-            - SUMMARY.md
-          EOF
-          
-          # Create layouts directory
-          mkdir -p _site_source/_layouts
-          
-          # Create simple, working layout
-          cat > _site_source/_layouts/default.html << 'EOF'
-          <!DOCTYPE html>
-          <html lang="en">
-          <head>
-              <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <title>{% if page.title %}{{ page.title }}{% else %}{{ site.title }}{% endif %}</title>
-              <style>
-                  * {
-                      margin: 0;
-                      padding: 0;
-                      box-sizing: border-box;
-                  }
-                  
-                  body {
-                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                      line-height: 1.6;
-                      color: #24292e;
-                      background: #ffffff;
-                      display: flex;
-                      min-height: 100vh;
-                  }
-                  
-                  .sidebar {
-                      width: 280px;
-                      background: #f6f8fa;
-                      border-right: 1px solid #e1e4e8;
-                      padding: 20px;
-                      overflow-y: auto;
-                      flex-shrink: 0;
-                  }
-                  
-                  .sidebar h2 {
-                      font-size: 16px;
-                      margin-bottom: 20px;
-                      color: #24292e;
-                      border-bottom: 1px solid #e1e4e8;
-                      padding-bottom: 8px;
-                  }
-                  
-                  .sidebar ul {
-                      list-style: none;
-                  }
-                  
-                  .sidebar li {
-                      margin-bottom: 6px;
-                  }
-                  
-                  .sidebar a {
-                      display: block;
-                      padding: 8px 12px;
-                      color: #586069;
-                      text-decoration: none;
-                      border-radius: 6px;
-                      font-size: 14px;
-                      transition: all 0.2s;
-                  }
-                  
-                  .sidebar a:hover {
-                      background-color: #e1e4e8;
-                      color: #24292e;
-                  }
-                  
-                  .content {
-                      flex: 1;
-                      padding: 40px;
-                      overflow-y: auto;
-                  }
-                  
-                  .content h1 {
-                      font-size: 32px;
-                      margin-bottom: 20px;
-                      border-bottom: 1px solid #e1e4e8;
-                      padding-bottom: 10px;
-                  }
-                  
-                  .content h2 {
-                      font-size: 24px;
-                      margin-top: 32px;
-                      margin-bottom: 16px;
-                  }
-                  
-                  .content h3 {
-                      font-size: 20px;
-                      margin-top: 24px;
-                      margin-bottom: 12px;
-                  }
-                  
-                  .content p {
-                      margin-bottom: 16px;
-                  }
-                  
-                  .content ul, .content ol {
-                      margin-bottom: 16px;
-                      padding-left: 20px;
-                  }
-                  
-                  .content li {
-                      margin-bottom: 4px;
-                  }
-                  
-                  .content code {
-                      background: #f6f8fa;
-                      padding: 2px 6px;
-                      border-radius: 3px;
-                      font-family: 'SFMono-Regular', Consolas, monospace;
-                      font-size: 0.9em;
-                  }
-                  
-                  .content pre {
-                      background: #f6f8fa;
-                      padding: 16px;
-                      border-radius: 6px;
-                      overflow-x: auto;
-                      margin-bottom: 16px;
-                      border: 1px solid #e1e4e8;
-                  }
-                  
-                  .content pre code {
-                      background: none;
-                      padding: 0;
-                  }
-                  
-                  .content blockquote {
-                      border-left: 4px solid #0366d6;
-                      background: #f6f8fa;
-                      padding: 16px;
-                      margin: 16px 0;
-                      border-radius: 0 6px 6px 0;
-                  }
-                  
-                  .content blockquote p {
-                      margin-bottom: 8px;
-                  }
-                  
-                  .content blockquote p:last-child {
-                      margin-bottom: 0;
-                  }
-                  
-                  .content table {
-                      width: 100%;
-                      border-collapse: collapse;
-                      margin-bottom: 16px;
-                  }
-                  
-                  .content th, .content td {
-                      border: 1px solid #e1e4e8;
-                      padding: 8px 12px;
-                      text-align: left;
-                  }
-                  
-                  .content th {
-                      background: #f6f8fa;
-                      font-weight: 600;
-                  }
-                  
-                  .content img {
-                      max-width: 100%;
-                      height: auto;
-                      margin: 16px 0;
-                      border-radius: 6px;
-                  }
-                  
-                  .content a {
-                      color: #0366d6;
-                      text-decoration: none;
-                  }
-                  
-                  .content a:hover {
-                      text-decoration: underline;
-                  }
-                  
-                  /* Responsive */
-                  @media (max-width: 768px) {
-                      body {
-                          flex-direction: column;
-                      }
-                      
-                      .sidebar {
-                          width: 100%;
-                          border-right: none;
-                          border-bottom: 1px solid #e1e4e8;
-                      }
-                      
-                      .content {
-                          padding: 20px;
-                      }
-                  }
-              </style>
-          </head>
-          <body>
-              <nav class="sidebar">
-                  <h2>{{ site.title }}</h2>
-                  <ul>
-                      {% if site.data.navigation %}
-                          {% for item in site.data.navigation %}
-                          <li><a href="{{ item.url | relative_url }}">{{ item.title }}</a></li>
-                          {% endfor %}
-                      {% else %}
-                          {% include _navigation.html %}
-                      {% endif %}
-                  </ul>
-              </nav>
-              
-              <main class="content">
-                  {{ content }}
-              </main>
-          </body>
-          </html>
-          EOF
+          HTMLEOF
 
       - name: Create Gemfile
         run: |

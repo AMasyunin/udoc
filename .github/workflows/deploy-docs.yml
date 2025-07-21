@@ -46,7 +46,7 @@ jobs:
           find _site_source -name "*.md" -type f -exec sed -i 's/{% hint %}/> **Note:** /g' {} \;
           
           # Add front matter to markdown files that don't have it
-          for file in _site_source/*.md _site_source/*/*.md _site_source/*/*/*.md; do
+          for file in _site_source/*.md _site_source/*/*.md _site_source/*/*/*.md _site_source/*/*/*/*.md; do
             if [ -f "$file" ]; then
               if ! head -1 "$file" | grep -q "^---"; then
                 temp_file="/tmp/temp_$(basename "$file")"
@@ -99,11 +99,12 @@ jobs:
                           # Convert path to URL
                           if path == 'README.md':
                               url = '/'
+                          elif path.endswith('/README.md'):
+                              # For directory README files, use directory path
+                              url = '/' + path.replace('/README.md', '') + '/'
                           else:
-                              url = '/' + path.replace('.md', '').replace('README', '')
-                              url = url.rstrip('/')
-                              if url == '':
-                                  url = '/'
+                              # For regular files
+                              url = '/' + path.replace('.md', '').replace('\\', '/') + '/'
                           
                           nav_items.append({
                               'title': title,
@@ -127,19 +128,32 @@ jobs:
               print(f'{indent}- {item["title"]}: {item["url"]} (level {item["level"]})')
           print('=== END PARSED NAVIGATION ===')
           
-          # Generate HTML navigation
+          # Generate HTML navigation with proper hierarchy
           nav_html = []
+          current_section = None
           
           for item in nav_items:
               if item['level'] == 0:
-                  # Main section
-                  nav_html.append(f'<li><a href="{item["url"]}">{item["title"]}</a></li>')
+                  # Main pages - check if it's a section header
+                  if item['title'] in ['Users', 'Devices', 'Settings', 'Plans']:
+                      current_section = item['title']
+                      nav_html.append(f'<li class="nav-section-header">{item["title"]}</li>')
+                      nav_html.append(f'<li class="nav-section-main"><a href="{item["url"]}">{item["title"]} Overview</a></li>')
+                  else:
+                      # Regular main pages
+                      nav_html.append(f'<li><a href="{item["url"]}">{item["title"]}</a></li>')
               elif item['level'] == 1:
-                  # Subsection
+                  # Subsections
                   nav_html.append(f'<li class="nav-subsection"><a href="{item["url"]}">{item["title"]}</a></li>')
               elif item['level'] == 2:
-                  # Sub-subsection
+                  # Sub-subsections  
                   nav_html.append(f'<li class="nav-sub-subsection"><a href="{item["url"]}">{item["title"]}</a></li>')
+          
+          # Debug the URLs
+          print('=== CHECKING URL GENERATION ===')
+          for item in nav_items:
+              print(f'Title: "{item["title"]}" | Path: "{item["path"]}" | URL: "{item["url"]}" | Level: {item["level"]}')
+          print('=== END URL CHECK ===')
           
           # Save navigation to _includes directory for Jekyll
           os.makedirs('_site_source/_includes', exist_ok=True)
@@ -270,11 +284,17 @@ jobs:
                       letter-spacing: 0.5px;
                       border-top: 1px solid #e1e4e8;
                       margin-top: 8px;
+                      cursor: default;
                   }
                   
                   .sidebar .nav-section-header:first-child {
                       border-top: none;
                       margin-top: 0;
+                  }
+                  
+                  .sidebar .nav-section-main a {
+                      font-weight: 500;
+                      color: #0366d6;
                   }
                   
                   .sidebar .nav-subsection a {

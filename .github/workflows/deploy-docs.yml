@@ -2,7 +2,7 @@ name: Deploy Admin Panel Docs
 
 on:
   push:
-    branches: [ userdocs ]
+    branches: [ main, master, userdocs ]  # Add multiple branches
     paths: [ 'docs/admin-panel/**' ]
   workflow_dispatch:
 
@@ -50,19 +50,13 @@ jobs:
           find _site_source -name "*.md" -type f -exec sed -i 's/{% code title="[^"]*" %}/```/g' {} \;
           find _site_source -name "*.md" -type f -exec sed -i 's/{% endcode %}/```/g' {} \;
           
-      - name: Create Jekyll config
+      - name: Create Jekyll config and custom layout
         run: |
           cat > _site_source/_config.yml << 'EOF'
           title: "Admin Panel Documentation"
           description: "Administration Guide"
           baseurl: "/udoc"
           url: "https://amasyunin.github.io"
-          
-          theme: minima
-          
-          plugins:
-            - jekyll-feed
-            - jekyll-sitemap
           
           markdown: kramdown
           kramdown:
@@ -71,9 +65,9 @@ jobs:
           
           highlighter: rouge
           
-          # Handle relative links
-          relative_links:
-            enabled: false
+          # Disable default theme to use custom layout
+          plugins:
+            - jekyll-sitemap
           
           # Include all markdown files
           include:
@@ -86,6 +80,276 @@ jobs:
             - book.json
             - node_modules/
             - "*.log"
+            - Gemfile
+            - Gemfile.lock
+          EOF
+          
+          # Create layouts directory
+          mkdir -p _site_source/_layouts
+          
+          # Create custom layout for iframe embedding
+          cat > _site_source/_layouts/default.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>{% if page.title %}{{ page.title }}{% else %}{{ site.title }}{% endif %}</title>
+              <style>
+                  * {
+                      margin: 0;
+                      padding: 0;
+                      box-sizing: border-box;
+                  }
+                  
+                  body {
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                      line-height: 1.6;
+                      color: #24292e;
+                      background: #ffffff;
+                      height: 100vh;
+                      display: flex;
+                  }
+                  
+                  .sidebar {
+                      width: 280px;
+                      background: #f8f9fa;
+                      border-right: 1px solid #e1e4e8;
+                      padding: 20px;
+                      overflow-y: auto;
+                      flex-shrink: 0;
+                  }
+                  
+                  .sidebar h2 {
+                      font-size: 18px;
+                      margin-bottom: 20px;
+                      color: #24292e;
+                      border-bottom: 1px solid #e1e4e8;
+                      padding-bottom: 10px;
+                  }
+                  
+                  .nav-section {
+                      margin-bottom: 15px;
+                  }
+                  
+                  .nav-section h3 {
+                      font-size: 14px;
+                      font-weight: 600;
+                      color: #586069;
+                      margin-bottom: 8px;
+                      text-transform: uppercase;
+                      letter-spacing: 0.5px;
+                  }
+                  
+                  .nav-links {
+                      list-style: none;
+                  }
+                  
+                  .nav-links li {
+                      margin-bottom: 4px;
+                  }
+                  
+                  .nav-links a {
+                      display: block;
+                      padding: 6px 12px;
+                      color: #24292e;
+                      text-decoration: none;
+                      border-radius: 6px;
+                      font-size: 14px;
+                      transition: background-color 0.2s;
+                  }
+                  
+                  .nav-links a:hover {
+                      background-color: #e1e4e8;
+                  }
+                  
+                  .nav-links a.active {
+                      background-color: #0366d6;
+                      color: white;
+                  }
+                  
+                  .content {
+                      flex: 1;
+                      padding: 30px 40px;
+                      overflow-y: auto;
+                      max-width: calc(100% - 280px);
+                  }
+                  
+                  .content h1 {
+                      font-size: 32px;
+                      margin-bottom: 16px;
+                      border-bottom: 1px solid #e1e4e8;
+                      padding-bottom: 10px;
+                  }
+                  
+                  .content h2 {
+                      font-size: 24px;
+                      margin-top: 32px;
+                      margin-bottom: 16px;
+                  }
+                  
+                  .content h3 {
+                      font-size: 20px;
+                      margin-top: 24px;
+                      margin-bottom: 12px;
+                  }
+                  
+                  .content p {
+                      margin-bottom: 16px;
+                      color: #24292e;
+                  }
+                  
+                  .content ul, .content ol {
+                      margin-bottom: 16px;
+                      padding-left: 20px;
+                  }
+                  
+                  .content li {
+                      margin-bottom: 4px;
+                  }
+                  
+                  .content code {
+                      background: #f6f8fa;
+                      padding: 2px 6px;
+                      border-radius: 3px;
+                      font-family: 'SFMono-Regular', 'Consolas', monospace;
+                      font-size: 0.9em;
+                  }
+                  
+                  .content pre {
+                      background: #f6f8fa;
+                      padding: 16px;
+                      border-radius: 6px;
+                      overflow-x: auto;
+                      margin-bottom: 16px;
+                      border: 1px solid #e1e4e8;
+                  }
+                  
+                  .content pre code {
+                      background: none;
+                      padding: 0;
+                  }
+                  
+                  .content blockquote {
+                      border-left: 4px solid #0366d6;
+                      padding-left: 16px;
+                      margin: 16px 0;
+                      color: #586069;
+                      background: #f6f8fa;
+                      padding: 16px;
+                      border-radius: 0 6px 6px 0;
+                  }
+                  
+                  .content table {
+                      width: 100%;
+                      border-collapse: collapse;
+                      margin-bottom: 16px;
+                  }
+                  
+                  .content th, .content td {
+                      border: 1px solid #e1e4e8;
+                      padding: 8px 12px;
+                      text-align: left;
+                  }
+                  
+                  .content th {
+                      background: #f6f8fa;
+                      font-weight: 600;
+                  }
+                  
+                  .content img {
+                      max-width: 100%;
+                      height: auto;
+                      margin: 16px 0;
+                      border-radius: 6px;
+                      border: 1px solid #e1e4e8;
+                  }
+                  
+                  .content a {
+                      color: #0366d6;
+                      text-decoration: none;
+                  }
+                  
+                  .content a:hover {
+                      text-decoration: underline;
+                  }
+                  
+                  /* Responsive design */
+                  @media (max-width: 768px) {
+                      body {
+                          flex-direction: column;
+                      }
+                      
+                      .sidebar {
+                          width: 100%;
+                          height: auto;
+                          border-right: none;
+                          border-bottom: 1px solid #e1e4e8;
+                      }
+                      
+                      .content {
+                          max-width: 100%;
+                          padding: 20px;
+                      }
+                  }
+              </style>
+          </head>
+          <body>
+              <nav class="sidebar">
+                  <h2>{{ site.title }}</h2>
+                  
+                  <div class="nav-section">
+                      <ul class="nav-links">
+                          <li><a href="{{ '/' | relative_url }}">Overview</a></li>
+                          <li><a href="{{ '/table-of-contents' | relative_url }}">Table of Contents</a></li>
+                      </ul>
+                  </div>
+                  
+                  <div class="nav-section">
+                      <h3>Getting Started</h3>
+                      <ul class="nav-links">
+                          <li><a href="{{ '/access' | relative_url }}">Access</a></li>
+                          <li><a href="{{ '/devices' | relative_url }}">Devices</a></li>
+                          <li><a href="{{ '/air-console' | relative_url }}">Air Console</a></li>
+                      </ul>
+                  </div>
+                  
+                  <div class="nav-section">
+                      <h3>Management</h3>
+                      <ul class="nav-links">
+                          <li><a href="{{ '/basic-operations' | relative_url }}">Basic Operations</a></li>
+                          <li><a href="{{ '/bulk-activation' | relative_url }}">Bulk Activation</a></li>
+                          <li><a href="{{ '/change-plan' | relative_url }}">Change Plan</a></li>
+                          <li><a href="{{ '/tracker-clones' | relative_url }}">Tracker Clones</a></li>
+                      </ul>
+                  </div>
+                  
+                  <div class="nav-section">
+                      <h3>Configuration</h3>
+                      <ul class="nav-links">
+                          <li><a href="{{ '/admin-panel' | relative_url }}">Admin Panel</a></li>
+                          <li><a href="{{ '/plans' | relative_url }}">Plans</a></li>
+                          <li><a href="{{ '/settings' | relative_url }}">Settings</a></li>
+                          <li><a href="{{ '/branding-options' | relative_url }}">Branding Options</a></li>
+                      </ul>
+                  </div>
+                  
+                  <div class="nav-section">
+                      <h3>User Management</h3>
+                      <ul class="nav-links">
+                          <li><a href="{{ '/users' | relative_url }}">Users</a></li>
+                          <li><a href="{{ '/create-user' | relative_url }}">Create User</a></li>
+                          <li><a href="{{ '/user-details' | relative_url }}">User Details</a></li>
+                          <li><a href="{{ '/two-factor-authentication' | relative_url }}">Two-Factor Auth</a></li>
+                      </ul>
+                  </div>
+              </nav>
+              
+              <main class="content">
+                  {{ content }}
+              </main>
+          </body>
+          </html>
           EOF
 
       - name: Create Gemfile
@@ -93,9 +357,7 @@ jobs:
           cat > _site_source/Gemfile << 'EOF'
           source 'https://rubygems.org'
           
-          gem 'github-pages', group: :jekyll_plugins
-          gem 'minima'
-          gem 'jekyll-feed'
+          gem 'jekyll', '~> 4.3.0'
           gem 'jekyll-sitemap'
           gem 'webrick'
           EOF

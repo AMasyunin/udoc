@@ -162,6 +162,11 @@ jobs:
                       transition: all 0.2s;
                   }
                   
+                  .sidebar a:hover {
+                      background-color: #e1e4e8;
+                      color: #24292e;
+                  }
+                  
                   .sidebar a.current {
                       background-color: #0366d6;
                       color: white;

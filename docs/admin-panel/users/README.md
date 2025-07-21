@@ -1,7 +1,5 @@
 # Users
 
-## Users
-
 In the [Users](https://panel.navixy.com/#users) section you can create and manage user accounts. The main screen displays a list of your existing users. You can easily add, delete, or edit accounts. To find a particular user, simply use the search box provided below.
 
 ![Admin Panel Users Overview](../attachments/panel-users-1-20230811-200848.jpg)

@@ -1,7 +1,5 @@
 # Messaging gateways
 
-## Messaging gateways
-
 Navixy uses two types of messaging gateways: Email and SMS. These gateways are essential tools for GPS/Telematics service providers to communicate with their customers, send alerts and notifications, and interact with IoT devices. Messaging gateways can be configured and managed in the [Service preferences](https://panel.navixy.com/#settings) section of the Admin Panel.
 
 ## Email gateway

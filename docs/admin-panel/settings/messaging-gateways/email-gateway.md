@@ -1,15 +1,5 @@
 # Email gateway
 
-* [Selecting an Email Gateway](email-gateway.md#selecting-an-email-gateway)
-* [Selecting the sender address](email-gateway.md#selecting-the-sender-address)
-* [Navixy Gateway](email-gateway.md#Emailgateway-NavixyGateway)
-  * [Your Own 'From' Address](email-gateway.md#your-own-from-address)
-  * [Step 1: Authenticating your domain](email-gateway.md#step-1-authenticating-your-domain)
-  * [Step 2: Authorizing your domain](email-gateway.md#step-2-authorizing-your-domain)
-  * [Step 3: Assigning the sender address](email-gateway.md#step-3-assigning-the-sender-address)
-  * [How to check if the DKIM field is correct](email-gateway.md#how-to-check-if-the-dkim-field-is-correct)
-* [3rd party gateway](email-gateway.md#Emailgateway-3rdpartygateway)
-
 There are a number of situations where GPS tracking system users receive automated emails. Examples include:
 
 * Event notifications (if email notification is selected)

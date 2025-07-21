@@ -6,7 +6,9 @@ With Navixy you can provide your customers with online payment capabilities. You
 
 With Navixy, you can easily integrate Stripe to receive online payments from your customers automatically.
 
-> Stripe is a global payment processor that supports more than 100 currencies and is available in over 30 countries. By integrating Stripe with Navixy, you can accept online payments from your customers using a range of payment methods, including bank cards (Visa, Mastercard, American Express), Google Pay, Apple Pay, Alipay, and many others.
+{% hint style="info" %}
+Stripe is a global payment processor that supports more than 100 currencies and is available in over 30 countries. By integrating Stripe with Navixy, you can accept online payments from your customers using a range of payment methods, including bank cards (Visa, Mastercard, American Express), Google Pay, Apple Pay, Alipay, and many others.
+{% endhint %}
 
 To activate Stripe integration with Navixy, please contact your account manager for assistance. Once activated, you will need to configure the following technical settings in your Stripe account:
 

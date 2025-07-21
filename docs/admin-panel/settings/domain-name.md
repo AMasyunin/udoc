@@ -1,7 +1,5 @@
 # Domain name
 
-## Domain name
-
 When you create a new Navixy ServerMate trial account, you are given a default URL in the format of **https://\*\*\*\*\*.navixy.com**. However, it is common to want to customize this URL and use your own domain name instead. This is a straightforward process that we will guide you through step-by-step.
 
 ## Setting up your domain name for Navixy account

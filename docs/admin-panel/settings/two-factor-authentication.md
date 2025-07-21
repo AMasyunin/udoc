@@ -9,6 +9,8 @@ You can enhance the security of user accounts on the Navixy platform by enabling
 
 ![Screenshot 2024-09-18 at 14.19.29.png](<attachments/Screenshot 2024-09-18 at 14.19.29.png>)
 
-> \[!INFO] Note that the current implementation only allows enabling Two-Factor Authentication for all account users, including sub-users created in the main account.
+{% hint style="info" %}
+Note that the current implementation only allows enabling Two-Factor Authentication for all account users, including sub-users created in the main account.
+{% endhint %}
 
-To configure 2FA settings, you can utilize our updated Panel API, using the calls to read and update 2FA settings for a list of specified users or all users of the platform, as well as set default settings for new users. You can learn more about our Panel API in the [Developer Hub](https://developers.navixy.com/panel-api/resources/user/mfa/settings/).
+To configure 2FA settings, you can utilize our updated Panel API, using the calls to read and update 2FA settings for a list of specified users or all users of the platform, as well as set default settings for new users. You can learn more about our Panel API in the [Developer Hub](https://app.gitbook.com/s/6dtcPLayxXVB2qaaiuIL/panel-api/resources/user/mfa-settings).

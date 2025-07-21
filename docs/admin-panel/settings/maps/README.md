@@ -1,7 +1,5 @@
 # Maps
 
-## Maps
-
 ## Cartography in Navixy
 
 To make GPS data easy to understand, the Navixy GPS-tracking platform utilizes digital Maps and Geographic Information Services (GIS).
@@ -68,6 +66,6 @@ Activating additional Maps and GIS services with Navixy is a straightforward pro
 3. Our team will provide you with the necessary instructions and help you activate the service(s)
 4. Once activated, you can start using the new maps and GIS services right away
 
-For more information about deploying your own tile server please refer to the separate document [Map tile servers](https://squaregps.slite.com/app/docs/WIkKMkA8gLbv9e).
+For more information about deploying your own tile server please refer to the separate document [Map tile servers](https://docs.navixy.com/on-premise/custom-maps).
 
 Please note that Maps and GIS services that you deploy locally or in the cloud may require separate licenses or paid subscriptions. Our team will help you navigate this process and ensure that you have everything you need to take full advantage of Navixy's offerings.

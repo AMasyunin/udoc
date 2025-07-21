@@ -141,8 +141,9 @@ jobs:
                   # Sub-subsection
                   nav_html.append(f'<li class="nav-sub-subsection"><a href="{item["url"]}">{item["title"]}</a></li>')
           
-          # Save navigation
-          with open('_site_source/_navigation.html', 'w') as f:
+          # Save navigation to _includes directory for Jekyll
+          mkdir -p _site_source/_includes
+          with open('_site_source/_includes/navigation.html', 'w') as f:
               f.write('\n'.join(nav_html))
               
           print('=== GENERATED NAVIGATION HTML ===')
@@ -426,7 +427,7 @@ jobs:
               <nav class="sidebar">
                   <h2>{{ site.title }}</h2>
                   <ul>
-                      {% include _navigation.html %}
+                      {% include navigation.html %}
                   </ul>
               </nav>
               

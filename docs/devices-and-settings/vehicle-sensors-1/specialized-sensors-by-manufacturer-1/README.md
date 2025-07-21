@@ -1,2 +1,0 @@
-# Specialized sensors by manufacturer
-

@@ -101,10 +101,11 @@ jobs:
                               url = '/'
                           elif path.endswith('/README.md'):
                               # For directory README files, use directory path
-                              url = '/' + path.replace('/README.md', '') + '/'
+                              dir_path = path.replace('/README.md', '')
+                              url = '/' + dir_path + '/'
                           else:
-                              # For regular files
-                              url = '/' + path.replace('.md', '').replace('\\', '/') + '/'
+                              # For regular files - Jekyll creates .html files
+                              url = '/' + path.replace('.md', '.html').replace('\\', '/')
                           
                           nav_items.append({
                               'title': title,
@@ -128,26 +129,49 @@ jobs:
               print(f'{indent}- {item["title"]}: {item["url"]} (level {item["level"]})')
           print('=== END PARSED NAVIGATION ===')
           
-          # Generate HTML navigation with proper hierarchy
+          # Generate HTML navigation with collapsible GitBook-style structure
           nav_html = []
-          current_section = None
           
+          # Start with main pages
           for item in nav_items:
-              if item['level'] == 0:
-                  # Main pages - check if it's a section header
-                  if item['title'] in ['Users', 'Devices', 'Settings', 'Plans']:
-                      current_section = item['title']
-                      nav_html.append(f'<li class="nav-section-header">{item["title"]}</li>')
-                      nav_html.append(f'<li class="nav-section-main"><a href="{item["url"]}">{item["title"]} Overview</a></li>')
-                  else:
-                      # Regular main pages
-                      nav_html.append(f'<li><a href="{item["url"]}">{item["title"]}</a></li>')
-              elif item['level'] == 1:
-                  # Subsections
-                  nav_html.append(f'<li class="nav-subsection"><a href="{item["url"]}">{item["title"]}</a></li>')
-              elif item['level'] == 2:
-                  # Sub-subsections  
-                  nav_html.append(f'<li class="nav-sub-subsection"><a href="{item["url"]}">{item["title"]}</a></li>')
+              if item['level'] == 0 and item['title'] not in ['Users', 'Devices', 'Settings', 'Plans']:
+                  nav_html.append(f'<li><a href="{item["url"]}">{item["title"]}</a></li>')
+          
+          # Add collapsible sections
+          sections = ['Users', 'Devices', 'Settings', 'Plans']
+          for section in sections:
+              section_items = [item for item in nav_items if item['level'] >= 0 and (
+                  item['title'] == section or 
+                  (item['level'] > 0 and any(prev['title'] == section and prev['level'] == 0 for prev in nav_items[:nav_items.index(item)]))
+              )]
+              
+              if section_items:
+                  # Find section main page
+                  section_main = next((item for item in section_items if item['title'] == section), None)
+                  if section_main:
+                      nav_html.append('<li class="nav-section">')
+                      nav_html.append(f'  <div class="nav-section-toggle" onclick="toggleSection(\\"{section.lower()}\\")">')
+                      nav_html.append('    <span class="nav-arrow">▶</span>')
+                      nav_html.append(f'    <a href="{section_main["url"]}">{section}</a>')
+                      nav_html.append('  </div>')
+                      nav_html.append(f'  <ul class="nav-subsection-list" id="{section.lower()}-list" style="display: none;">')
+                      
+                      # Add subsection items
+                      current_subsection = None
+                      for item in section_items[1:]:  # Skip the main section item
+                          if item['level'] == 1:
+                              nav_html.append(f'    <li><a href="{item["url"]}">{item["title"]}</a></li>')
+                              current_subsection = item['title']
+                          elif item['level'] == 2:
+                              nav_html.append(f'    <li class="nav-sub-item"><a href="{item["url"]}">{item["title"]}</a></li>')
+                      
+                      nav_html.append('  </ul>')
+                      nav_html.append('</li>')
+          
+          # Add remaining main pages
+          for item in nav_items:
+              if item['level'] == 0 and item['title'] in ['Reports', 'Resellers']:
+                  nav_html.append(f'<li><a href="{item["url"]}">{item["title"]}</a></li>')
           
           # Debug the URLs
           print('=== CHECKING URL GENERATION ===')
@@ -275,46 +299,61 @@ jobs:
                       color: #24292e;
                   }
                   
-                  .sidebar .nav-section-header {
-                      font-weight: 600;
-                      color: #24292e;
-                      padding: 12px 12px 8px 12px;
-                      font-size: 13px;
-                      text-transform: uppercase;
-                      letter-spacing: 0.5px;
-                      border-top: 1px solid #e1e4e8;
-                      margin-top: 8px;
-                      cursor: default;
+                  .sidebar .nav-section {
+                      margin-bottom: 8px;
                   }
                   
-                  .sidebar .nav-section-header:first-child {
-                      border-top: none;
-                      margin-top: 0;
+                  .sidebar .nav-section-toggle {
+                      display: flex;
+                      align-items: center;
+                      padding: 8px 12px;
+                      cursor: pointer;
+                      border-radius: 6px;
+                      transition: background-color 0.2s;
                   }
                   
-                  .sidebar .nav-section-main a {
-                      font-weight: 500;
-                      color: #0366d6;
+                  .sidebar .nav-section-toggle:hover {
+                      background-color: #e1e4e8;
                   }
                   
-                  .sidebar .nav-subsection a {
-                      padding-left: 24px;
-                      font-size: 13px;
+                  .sidebar .nav-arrow {
+                      margin-right: 8px;
+                      font-size: 10px;
+                      transition: transform 0.2s;
                       color: #6a737d;
                   }
                   
-                  .sidebar .nav-subsection a:hover {
-                      color: #24292e;
+                  .sidebar .nav-arrow.expanded {
+                      transform: rotate(90deg);
                   }
                   
-                  .sidebar .nav-sub-subsection a {
-                      padding-left: 36px;
+                  .sidebar .nav-section-toggle a {
+                      color: #24292e;
+                      font-weight: 500;
+                      text-decoration: none;
+                      margin-left: 4px;
+                  }
+                  
+                  .sidebar .nav-subsection-list {
+                      list-style: none;
+                      padding-left: 20px;
+                      margin: 0;
+                  }
+                  
+                  .sidebar .nav-subsection-list li {
+                      margin-bottom: 4px;
+                  }
+                  
+                  .sidebar .nav-subsection-list a {
+                      padding: 4px 8px;
+                      color: #6a737d;
+                      font-size: 13px;
+                  }
+                  
+                  .sidebar .nav-sub-item a {
+                      padding-left: 20px;
                       font-size: 12px;
                       color: #8a8a8a;
-                  }
-                  
-                  .sidebar .nav-sub-subsection a:hover {
-                      color: #24292e;
                   }
                   
                   .content {
@@ -454,6 +493,33 @@ jobs:
               <main class="content">
                   {{ content }}
               </main>
+              
+              <script>
+                  function toggleSection(sectionId) {
+                      const list = document.getElementById(sectionId + '-list');
+                      const arrow = document.querySelector(`[onclick="toggleSection('${sectionId}')"] .nav-arrow`);
+                      
+                      if (list.style.display === 'none') {
+                          list.style.display = 'block';
+                          arrow.classList.add('expanded');
+                      } else {
+                          list.style.display = 'none';
+                          arrow.classList.remove('expanded');
+                      }
+                  }
+                  
+                  // Auto-expand section containing current page
+                  document.addEventListener('DOMContentLoaded', function() {
+                      const currentPath = window.location.pathname;
+                      const sections = ['users', 'devices', 'settings', 'plans'];
+                      
+                      sections.forEach(section => {
+                          if (currentPath.includes('/' + section + '/')) {
+                              toggleSection(section);
+                          }
+                      });
+                  });
+              </script>
           </body>
           </html>
           HTMLEOF

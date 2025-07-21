@@ -423,15 +423,109 @@ jobs:
           cd _site_source
           
           echo "=== FILES BEFORE JEKYLL BUILD ==="
-          find . -type f | head -20
+          find . -type f | sort
           echo "=== END FILES LISTING ==="
           
+          echo "=== CHECKING CRITICAL FILES ==="
+          if [ -f index.md ]; then
+            echo "✓ index.md exists"
+            echo "First few lines:"
+            head -5 index.md
+          else
+            echo "✗ index.md MISSING!"
+          fi
+          
+          if [ -f _config.yml ]; then
+            echo "✓ _config.yml exists"
+          else
+            echo "✗ _config.yml MISSING!"
+          fi
+          
+          if [ -f _layouts/default.html ]; then
+            echo "✓ default.html layout exists"
+          else
+            echo "✗ default.html layout MISSING!"
+          fi
+          echo "=== END CRITICAL FILES CHECK ==="
+          
           bundle install
-          bundle exec jekyll build --destination ../_site --verbose
+          
+          echo "=== RUNNING JEKYLL BUILD ==="
+          bundle exec jekyll build --destination ../_site --verbose --trace
+          echo "=== JEKYLL BUILD COMPLETE ==="
           
           echo "=== FILES AFTER JEKYLL BUILD ==="
-          find ../_site -type f | head -20
+          find ../_site -type f | sort
           echo "=== END BUILD OUTPUT ==="
+          
+          echo "=== CHECKING FOR INDEX.HTML ==="
+          if [ -f ../_site/index.html ]; then
+            echo "✓ index.html was created"
+            echo "File size: $(wc -c < ../_site/index.html) bytes"
+            echo "First few lines:"
+            head -10 ../_site/index.html
+          else
+            echo "✗ index.html was NOT created!"
+            echo "Available files in _site root:"
+            ls -la ../_site/ || echo "No _site directory!"
+          fi
+          echo "=== END INDEX.HTML CHECK ==="
+
+      - name: Create fallback if build fails
+        run: |
+          # If Jekyll failed to create index.html, create a simple fallback
+          if [ ! -f _site/index.html ]; then
+            echo "Jekyll build failed, creating fallback site"
+            mkdir -p _site
+            
+            # Create a simple HTML file with navigation
+            cat > _site/index.html << 'FALLBACKEOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Admin Panel Documentation</title>
+              <style>
+                  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 40px; }
+                  h1 { color: #24292e; border-bottom: 1px solid #e1e4e8; padding-bottom: 10px; }
+                  .nav-list { list-style: none; padding: 0; }
+                  .nav-list li { margin: 8px 0; }
+                  .nav-list a { color: #0366d6; text-decoration: none; }
+                  .nav-list a:hover { text-decoration: underline; }
+                  .section-header { font-weight: bold; margin-top: 20px; color: #586069; }
+              </style>
+          </head>
+          <body>
+              <h1>Admin Panel Documentation</h1>
+              <p>The Navixy Admin Panel is a powerful tool that allows administrators to customize the GPS tracking service platform.</p>
+              
+              <h2>Navigation</h2>
+              <ul class="nav-list">
+                  <li><a href="#overview">Overview</a></li>
+                  <li><a href="#access">Access</a></li>
+                  <li class="section-header">Devices</li>
+                  <li><a href="#devices">Device Management</a></li>
+                  <li><a href="#air-console">Air Console</a></li>
+                  <li class="section-header">Plans</li>
+                  <li><a href="#plans">Plan Management</a></li>
+                  <li><a href="#activation">Activation Codes</a></li>
+                  <li class="section-header">Settings</li>
+                  <li><a href="#settings">Settings</a></li>
+                  <li><a href="#branding">Branding Options</a></li>
+                  <li class="section-header">Users</li>
+                  <li><a href="#users">User Management</a></li>
+              </ul>
+              
+              <p><em>Note: This is a simplified fallback. The full documentation should load once Jekyll builds successfully.</em></p>
+          </body>
+          </html>
+          FALLBACKEOF
+            
+            echo "✓ Fallback index.html created"
+          else
+            echo "✓ Jekyll build succeeded, index.html exists"
+          fi
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

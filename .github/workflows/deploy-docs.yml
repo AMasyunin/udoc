@@ -40,103 +40,114 @@ jobs:
             echo "Renamed README.md to index.md"
           fi
           
+          # Fix GitBook syntax and add front matter to all markdown files
           find _site_source -name "*.md" -type f -exec sed -i 's/{% hint style="[^"]*" %}/> **Note:** /g' {} \;
           find _site_source -name "*.md" -type f -exec sed -i 's/{% endhint %}/\n/g' {} \;
           find _site_source -name "*.md" -type f -exec sed -i 's/{% hint %}/> **Note:** /g' {} \;
+          
+          # Add front matter to markdown files that don't have it
+          for file in _site_source/*.md _site_source/*/*.md _site_source/*/*/*.md; do
+            if [ -f "$file" ]; then
+              if ! head -1 "$file" | grep -q "^---"; then
+                temp_file="/tmp/temp_$(basename "$file")"
+                echo "---" > "$temp_file"
+                echo "layout: default" >> "$temp_file"
+                echo "---" >> "$temp_file"
+                echo "" >> "$temp_file"
+                cat "$file" >> "$temp_file"
+                mv "$temp_file" "$file"
+                echo "Added front matter to $(basename "$file")"
+              fi
+            fi
+          done
 
-      - name: Generate navigation
+      - name: Generate navigation from SUMMARY.md
         run: |
           cat > nav_generator.py << 'EOF'
-          import os
           import re
+          import os
           from pathlib import Path
           
-          def extract_title(filepath):
+          def parse_summary():
+              """Parse SUMMARY.md to create navigation structure"""
+              nav_items = []
+              
               try:
-                  with open(filepath, 'r', encoding='utf-8') as f:
+                  with open('_site_source/SUMMARY.md', 'r', encoding='utf-8') as f:
                       content = f.read()
                   
-                  h1_match = re.search(r'^#\s+(.+)$', content, re.MULTILINE)
-                  if h1_match:
-                      return h1_match.group(1).strip()
-                  
-                  filename = os.path.splitext(os.path.basename(filepath))[0]
-                  if filename.lower() == 'readme':
-                      parent_dir = os.path.basename(os.path.dirname(filepath))
-                      if parent_dir and parent_dir != '_site_source':
-                          return parent_dir.replace('-', ' ').title()
-                      return 'Overview'
-                  return filename.replace('-', ' ').replace('_', ' ').title()
-              except:
-                  return os.path.splitext(os.path.basename(filepath))[0].replace('-', ' ').title()
-          
-          def create_url_path(filepath):
-              rel_path = str(Path(filepath).relative_to('_site_source'))
-              if rel_path == 'README.md' or rel_path == 'index.md':
-                  return '/'
+                  # Parse markdown links: * [Title](path.md)
+                  lines = content.split('\n')
+                  for line in lines:
+                      line = line.strip()
+                      if not line or line.startswith('#'):
+                          continue
+                      
+                      # Count indentation level
+                      indent_level = 0
+                      original_line = line
+                      while line.startswith('  '):
+                          indent_level += 1
+                          line = line[2:]
+                      
+                      # Extract link
+                      link_match = re.match(r'\* \[(.+?)\]\((.+?)\)', line)
+                      if link_match:
+                          title = link_match.group(1)
+                          path = link_match.group(2)
+                          
+                          # Convert path to URL
+                          if path == 'README.md':
+                              url = '/'
+                          else:
+                              url = '/' + path.replace('.md', '').replace('README', '')
+                              url = url.rstrip('/')
+                              if url == '':
+                                  url = '/'
+                          
+                          nav_items.append({
+                              'title': title,
+                              'url': url,
+                              'path': path,
+                              'level': indent_level
+                          })
               
-              url = rel_path.replace('.md', '').replace('README', '').replace('\\', '/')
-              url = url.rstrip('/')
-              if not url.startswith('/'):
-                  url = '/' + url
-              return url if url != '/' else '/'
-          
-          sections = {
-              'main': [],
-              'devices': [],
-              'plans': [],  
-              'settings': [],
-              'users': []
-          }
-          
-          for md_file in sorted(Path('_site_source').glob('**/*.md')):
-              if md_file.name == 'SUMMARY.md':
-                  continue
-                  
-              filepath = str(md_file)
-              title = extract_title(filepath)
-              url = create_url_path(filepath)
+              except FileNotFoundError:
+                  print("SUMMARY.md not found, using fallback navigation")
+                  return []
               
-              path_parts = str(md_file.relative_to('_site_source')).split('/')
-              if len(path_parts) == 1:
-                  sections['main'].append({'title': title, 'url': url})
-              elif path_parts[0] in sections:
-                  sections[path_parts[0]].append({'title': title, 'url': url})
+              return nav_items
           
-          print('=== ORGANIZED NAVIGATION ===')
-          for section, items in sections.items():
-              if items:
-                  print(f'{section.upper()}:')
-                  for item in items:
-                      print(f'  - {item["title"]}: {item["url"]}')
-          print('=== END ORGANIZED NAVIGATION ===')
+          # Parse SUMMARY.md
+          nav_items = parse_summary()
           
+          print('=== PARSED NAVIGATION FROM SUMMARY.MD ===')
+          for item in nav_items:
+              indent = '  ' * item['level']
+              print(f'{indent}- {item["title"]}: {item["url"]} (level {item["level"]})')
+          print('=== END PARSED NAVIGATION ===')
+          
+          # Generate HTML navigation
           nav_html = []
           
-          if sections['main']:
-              for item in sections['main']:
+          for item in nav_items:
+              if item['level'] == 0:
+                  # Main section
                   nav_html.append(f'<li><a href="{item["url"]}">{item["title"]}</a></li>')
+              elif item['level'] == 1:
+                  # Subsection
+                  nav_html.append(f'<li class="nav-subsection"><a href="{item["url"]}">{item["title"]}</a></li>')
+              elif item['level'] == 2:
+                  # Sub-subsection
+                  nav_html.append(f'<li class="nav-sub-subsection"><a href="{item["url"]}">{item["title"]}</a></li>')
           
-          section_titles = {
-              'devices': 'Devices',
-              'plans': 'Plans', 
-              'settings': 'Settings',
-              'users': 'Users'
-          }
-          
-          for section_key in ['devices', 'plans', 'settings', 'users']:
-              if sections[section_key]:
-                  nav_html.append(f'<li class="nav-section-header">{section_titles[section_key]}</li>')
-                  
-                  for item in sections[section_key]:
-                      nav_html.append(f'<li class="nav-subsection"><a href="{item["url"]}">{item["title"]}</a></li>')
-          
+          # Save navigation
           with open('_site_source/_navigation.html', 'w') as f:
               f.write('\n'.join(nav_html))
               
-          print('=== FINAL NAVIGATION HTML ===')
+          print('=== GENERATED NAVIGATION HTML ===')
           print('\n'.join(nav_html))
-          print('=== END FINAL NAVIGATION ===')
+          print('=== END NAVIGATION HTML ===')
           EOF
           
           python3 nav_generator.py
@@ -153,11 +164,19 @@ jobs:
           kramdown:
             input: GFM
             syntax_highlighter: rouge
+            hard_wrap: false
           
           highlighter: rouge
           
           plugins:
             - jekyll-sitemap
+          
+          defaults:
+            - scope:
+                path: ""
+                type: "pages"
+              values:
+                layout: "default"
           
           include:
             - README.md
@@ -264,6 +283,16 @@ jobs:
                   }
                   
                   .sidebar .nav-subsection a:hover {
+                      color: #24292e;
+                  }
+                  
+                  .sidebar .nav-sub-subsection a {
+                      padding-left: 36px;
+                      font-size: 12px;
+                      color: #8a8a8a;
+                  }
+                  
+                  .sidebar .nav-sub-subsection a:hover {
                       color: #24292e;
                   }
                   

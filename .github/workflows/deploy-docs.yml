@@ -2,7 +2,7 @@ name: Deploy Admin Panel Docs
 
 on:
   push:
-    branches: [ main, master, userdocs ]  # Add multiple branches
+    branches: [ main, master, userdocs ]
     paths: [ 'docs/admin-panel/**' ]
   workflow_dispatch:
 
@@ -26,7 +26,7 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: Prepare content and fix GitBook syntax
+      - name: Prepare content and analyze structure
         run: |
           # Create site directory
           mkdir -p _site_source
@@ -34,23 +34,97 @@ jobs:
           # Copy admin-panel content
           cp -r docs/admin-panel/* _site_source/
           
+          # Analyze the actual structure
+          echo "=== ANALYZING REPOSITORY STRUCTURE ==="
+          find _site_source -name "*.md" | sort
+          echo "=== END STRUCTURE ANALYSIS ==="
+          
           # Rename README.md to index.md for Jekyll
           if [ -f _site_source/README.md ]; then
             mv _site_source/README.md _site_source/index.md
           fi
           
-          # Fix GitBook hint tags and other custom syntax
+          # Fix GitBook syntax
           find _site_source -name "*.md" -type f -exec sed -i 's/{% hint style="[^"]*" %}/> **Note:** /g' {} \;
           find _site_source -name "*.md" -type f -exec sed -i 's/{% endhint %}/\n/g' {} \;
           find _site_source -name "*.md" -type f -exec sed -i 's/{% hint %}/> **Note:** /g' {} \;
-          
-          # Fix other potential GitBook syntax
           find _site_source -name "*.md" -type f -exec sed -i 's/{% page-ref page="[^"]*" %}/\[See related page\]/g' {} \;
-          find _site_source -name "*.md" -type f -exec sed -i 's/{% embed url="[^"]*" %}/\[Embedded content\]/g' {} \;
-          find _site_source -name "*.md" -type f -exec sed -i 's/{% code title="[^"]*" %}/```/g' {} \;
-          find _site_source -name "*.md" -type f -exec sed -i 's/{% endcode %}/```/g' {} \;
+
+      - name: Generate navigation from actual files
+        run: |
+          # Create a simple navigation generator
+          cat > generate_nav.py << 'EOF'
+          import os
+          import re
+          from pathlib import Path
           
-      - name: Create Jekyll config and custom layout
+          def extract_title(filepath):
+              """Extract title from markdown file"""
+              try:
+                  with open(filepath, 'r', encoding='utf-8') as f:
+                      content = f.read()
+                      # Look for first h1
+                      h1_match = re.search(r'^#\s+(.+)$', content, re.MULTILINE)
+                      if h1_match:
+                          return h1_match.group(1).strip()
+                      
+                      # Fallback to filename
+                      filename = os.path.splitext(os.path.basename(filepath))[0]
+                      if filename.lower() == 'readme':
+                          return 'Overview'
+                      return filename.replace('-', ' ').replace('_', ' ').title()
+              except:
+                  return os.path.splitext(os.path.basename(filepath))[0].title()
+          
+          def generate_navigation():
+              """Generate navigation from actual files"""
+              nav_items = []
+              
+              # Find all markdown files
+              for md_file in sorted(Path('_site_source').glob('**/*.md')):
+                  if md_file.name.lower() in ['summary.md']:
+                      continue
+                      
+                  relative_path = str(md_file.relative_to('_site_source'))
+                  url_path = relative_path.replace('.md', '').replace('\\', '/')
+                  
+                  if relative_path == 'index.md':
+                      url_path = '/'
+                  else:
+                      url_path = '/' + url_path
+                  
+                  title = extract_title(md_file)
+                  nav_items.append({
+                      'title': title,
+                      'url': url_path,
+                      'path': relative_path
+                  })
+              
+              return nav_items
+          
+          # Generate navigation
+          nav_items = generate_navigation()
+          
+          # Print for debugging
+          print("=== GENERATED NAVIGATION ===")
+          for item in nav_items:
+              print(f"- {item['title']}: {item['url']}")
+          print("=== END NAVIGATION ===")
+          
+          # Create navigation HTML
+          nav_html = []
+          for item in nav_items:
+              nav_html.append(f'<li><a href="{{{{ "{item[\"url\"]}" | relative_url }}}}">{item["title"]}</a></li>')
+          
+          # Save navigation
+          with open('_site_source/_navigation.html', 'w') as f:
+              f.write('\n'.join(nav_html))
+          
+          EOF
+          
+          python3 generate_nav.py
+
+      - name: Create Jekyll config and layout
         run: |
           cat > _site_source/_config.yml << 'EOF'
           title: "Admin Panel Documentation"
@@ -65,16 +139,13 @@ jobs:
           
           highlighter: rouge
           
-          # Disable default theme to use custom layout
           plugins:
             - jekyll-sitemap
           
-          # Include all markdown files
           include:
             - README.md
             - "*.md"
           
-          # Exclude problematic files
           exclude:
             - .gitbook*
             - book.json
@@ -82,12 +153,14 @@ jobs:
             - "*.log"
             - Gemfile
             - Gemfile.lock
+            - generate_nav.py
+            - SUMMARY.md
           EOF
           
           # Create layouts directory
           mkdir -p _site_source/_layouts
           
-          # Create custom layout for iframe embedding
+          # Create simple, working layout
           cat > _site_source/_layouts/default.html << 'EOF'
           <!DOCTYPE html>
           <html lang="en">
@@ -107,13 +180,13 @@ jobs:
                       line-height: 1.6;
                       color: #24292e;
                       background: #ffffff;
-                      height: 100vh;
                       display: flex;
+                      min-height: 100vh;
                   }
                   
                   .sidebar {
                       width: 280px;
-                      background: #f8f9fa;
+                      background: #f6f8fa;
                       border-right: 1px solid #e1e4e8;
                       padding: 20px;
                       overflow-y: auto;
@@ -121,63 +194,45 @@ jobs:
                   }
                   
                   .sidebar h2 {
-                      font-size: 18px;
+                      font-size: 16px;
                       margin-bottom: 20px;
                       color: #24292e;
                       border-bottom: 1px solid #e1e4e8;
-                      padding-bottom: 10px;
+                      padding-bottom: 8px;
                   }
                   
-                  .nav-section {
-                      margin-bottom: 15px;
-                  }
-                  
-                  .nav-section h3 {
-                      font-size: 14px;
-                      font-weight: 600;
-                      color: #586069;
-                      margin-bottom: 8px;
-                      text-transform: uppercase;
-                      letter-spacing: 0.5px;
-                  }
-                  
-                  .nav-links {
+                  .sidebar ul {
                       list-style: none;
                   }
                   
-                  .nav-links li {
-                      margin-bottom: 4px;
+                  .sidebar li {
+                      margin-bottom: 6px;
                   }
                   
-                  .nav-links a {
+                  .sidebar a {
                       display: block;
-                      padding: 6px 12px;
-                      color: #24292e;
+                      padding: 8px 12px;
+                      color: #586069;
                       text-decoration: none;
                       border-radius: 6px;
                       font-size: 14px;
-                      transition: background-color 0.2s;
+                      transition: all 0.2s;
                   }
                   
-                  .nav-links a:hover {
+                  .sidebar a:hover {
                       background-color: #e1e4e8;
-                  }
-                  
-                  .nav-links a.active {
-                      background-color: #0366d6;
-                      color: white;
+                      color: #24292e;
                   }
                   
                   .content {
                       flex: 1;
-                      padding: 30px 40px;
+                      padding: 40px;
                       overflow-y: auto;
-                      max-width: calc(100% - 280px);
                   }
                   
                   .content h1 {
                       font-size: 32px;
-                      margin-bottom: 16px;
+                      margin-bottom: 20px;
                       border-bottom: 1px solid #e1e4e8;
                       padding-bottom: 10px;
                   }
@@ -196,7 +251,6 @@ jobs:
                   
                   .content p {
                       margin-bottom: 16px;
-                      color: #24292e;
                   }
                   
                   .content ul, .content ol {
@@ -212,7 +266,7 @@ jobs:
                       background: #f6f8fa;
                       padding: 2px 6px;
                       border-radius: 3px;
-                      font-family: 'SFMono-Regular', 'Consolas', monospace;
+                      font-family: 'SFMono-Regular', Consolas, monospace;
                       font-size: 0.9em;
                   }
                   
@@ -232,12 +286,18 @@ jobs:
                   
                   .content blockquote {
                       border-left: 4px solid #0366d6;
-                      padding-left: 16px;
-                      margin: 16px 0;
-                      color: #586069;
                       background: #f6f8fa;
                       padding: 16px;
+                      margin: 16px 0;
                       border-radius: 0 6px 6px 0;
+                  }
+                  
+                  .content blockquote p {
+                      margin-bottom: 8px;
+                  }
+                  
+                  .content blockquote p:last-child {
+                      margin-bottom: 0;
                   }
                   
                   .content table {
@@ -262,7 +322,6 @@ jobs:
                       height: auto;
                       margin: 16px 0;
                       border-radius: 6px;
-                      border: 1px solid #e1e4e8;
                   }
                   
                   .content a {
@@ -274,7 +333,7 @@ jobs:
                       text-decoration: underline;
                   }
                   
-                  /* Responsive design */
+                  /* Responsive */
                   @media (max-width: 768px) {
                       body {
                           flex-direction: column;
@@ -282,13 +341,11 @@ jobs:
                       
                       .sidebar {
                           width: 100%;
-                          height: auto;
                           border-right: none;
                           border-bottom: 1px solid #e1e4e8;
                       }
                       
                       .content {
-                          max-width: 100%;
                           padding: 20px;
                       }
                   }
@@ -297,52 +354,15 @@ jobs:
           <body>
               <nav class="sidebar">
                   <h2>{{ site.title }}</h2>
-                  
-                  <div class="nav-section">
-                      <ul class="nav-links">
-                          <li><a href="{{ '/' | relative_url }}">Overview</a></li>
-                          <li><a href="{{ '/table-of-contents' | relative_url }}">Table of Contents</a></li>
-                      </ul>
-                  </div>
-                  
-                  <div class="nav-section">
-                      <h3>Getting Started</h3>
-                      <ul class="nav-links">
-                          <li><a href="{{ '/access' | relative_url }}">Access</a></li>
-                          <li><a href="{{ '/devices' | relative_url }}">Devices</a></li>
-                          <li><a href="{{ '/air-console' | relative_url }}">Air Console</a></li>
-                      </ul>
-                  </div>
-                  
-                  <div class="nav-section">
-                      <h3>Management</h3>
-                      <ul class="nav-links">
-                          <li><a href="{{ '/basic-operations' | relative_url }}">Basic Operations</a></li>
-                          <li><a href="{{ '/bulk-activation' | relative_url }}">Bulk Activation</a></li>
-                          <li><a href="{{ '/change-plan' | relative_url }}">Change Plan</a></li>
-                          <li><a href="{{ '/tracker-clones' | relative_url }}">Tracker Clones</a></li>
-                      </ul>
-                  </div>
-                  
-                  <div class="nav-section">
-                      <h3>Configuration</h3>
-                      <ul class="nav-links">
-                          <li><a href="{{ '/admin-panel' | relative_url }}">Admin Panel</a></li>
-                          <li><a href="{{ '/plans' | relative_url }}">Plans</a></li>
-                          <li><a href="{{ '/settings' | relative_url }}">Settings</a></li>
-                          <li><a href="{{ '/branding-options' | relative_url }}">Branding Options</a></li>
-                      </ul>
-                  </div>
-                  
-                  <div class="nav-section">
-                      <h3>User Management</h3>
-                      <ul class="nav-links">
-                          <li><a href="{{ '/users' | relative_url }}">Users</a></li>
-                          <li><a href="{{ '/create-user' | relative_url }}">Create User</a></li>
-                          <li><a href="{{ '/user-details' | relative_url }}">User Details</a></li>
-                          <li><a href="{{ '/two-factor-authentication' | relative_url }}">Two-Factor Auth</a></li>
-                      </ul>
-                  </div>
+                  <ul>
+                      {% if site.data.navigation %}
+                          {% for item in site.data.navigation %}
+                          <li><a href="{{ item.url | relative_url }}">{{ item.title }}</a></li>
+                          {% endfor %}
+                      {% else %}
+                          {% include _navigation.html %}
+                      {% endif %}
+                  </ul>
               </nav>
               
               <main class="content">

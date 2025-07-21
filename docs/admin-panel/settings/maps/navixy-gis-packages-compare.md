@@ -10,18 +10,18 @@ We offer two GIS packages: the "Basic GIS" and the "Premium GIS".
 
 Feel free to compare the two packages and choose the one that best suits your needs.
 
-| ### Features<br><br>###### for users | ### Basic GIS<br><br>###### Products: ServerMate, Cloud, On-Premise | ### Premium GIS<br><br>###### Products: ServerMate, Cloud, On-Premise |
-| --- | --- | --- |
-| Google Maps (license) | \-  | Yes |
-| Geocoding | OSRM, Progorod | Google, OSRM, Progorod |
-| LBS / Cell-ID | MLS | Google, MLS |
-| Route provider | OSRM, Progorod | Google, OSRM, Progorod |
-| Street view | \-  | Available |
-| Traffic | Progorod | Google, Progorod |
-| Distance matrix | Available | Available |
-| X-GPS Tracker for Android | Available (basic version) | Available (full access) |
-| X-GPS Monitor for Android | Available (basic version) | Yes (full version) |
-| X-GPS Tracker for iOS | Yes | Yes |
-| X-GPS Monitor for iOS | Yes | Yes |
+| <h3>Features</h3><p><strong>For users</strong></p><p></p> | <h3>Basic GIS </h3><p><strong>Products: ServerMate, Cloud, On-Premise</strong></p> | <h3>Premium GIS </h3><p><strong>Products: ServerMate, Cloud, On-Premise</strong></p> |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Google Maps (license)                                     | -                                                                                  | Yes                                                                                  |
+| Geocoding                                                 | OSRM, Progorod                                                                     | Google, OSRM, Progorod                                                               |
+| LBS / Cell-ID                                             | MLS                                                                                | Google, MLS                                                                          |
+| Route provider                                            | OSRM, Progorod                                                                     | Google, OSRM, Progorod                                                               |
+| Street view                                               | -                                                                                  | Available                                                                            |
+| Traffic                                                   | Progorod                                                                           | Google, Progorod                                                                     |
+| Distance matrix                                           | Available                                                                          | Available                                                                            |
+| X-GPS Tracker for Android                                 | Available (basic version)                                                          | Available (full access)                                                              |
+| X-GPS Monitor for Android                                 | Available (basic version)                                                          | Yes (full version)                                                                   |
+| X-GPS Tracker for iOS                                     | Yes                                                                                | Yes                                                                                  |
+| X-GPS Monitor for iOS                                     | Yes                                                                                | Yes                                                                                  |
 
-Please [contact our team](https://squaregps.atlassian.net/contact/) to activate the chosen GIS Package.
+Please [contact our team](https://www.navixy.com/contact/) to activate the chosen GIS Package.

@@ -1,23 +1,24 @@
 # Regional settings
 
-# Setting up regional settings
+## Setting up regional settings
 
-Navixy allows you to choose regional preferences for your service, including language, currency, and measurement system. You may set them up in Account Management → Service preferences.
+Navixy allows you to choose regional preferences for your service, including language, currency, and measurement system. You may set them up in Account Management → Service preferences.
 
-> [!INFO]
-> Changing User interface language will set the default language for all new user accounts. Users can also change their preferred language in their [account profile](https://squaregps.atlassian.net/wiki/spaces/USERDOCSOLD/pages/2909012449/Profile?atlOrigin=eyJpIjoiMzQ3Y2I0ZmNjNTNmNGNmZGE1Y2MyOTc0YTM4NGMyYTYiLCJwIjoiYyJ9).
+{% hint style="info" %}
+Changing User interface language will set the default language for all new user accounts. Users can also change their preferred language in their [account profile](https://docs.navixy.com/user-guide/user-prefernces).
+{% endhint %}
 
-![Regional Settings](./attachments/screen%20shot%202023-05-07%20at%203.37.21%20pm-20230811-204329.png)
+![Regional Settings](<attachments/screen shot 2023-05-07 at 3.37.21 pm-20230811-204329.png>)
 
-## Language
+### Language
 
-Navixy is dedicated to global accessibility, currently supporting dozens of languages with more being added regularly. Our platform’s versatility is enhanced by contributions from our vibrant community of translators. If the language you need isn’t yet supported, we invite you to [add a new language](#) and help expand our multilingual capabilities.
+Navixy is dedicated to global accessibility, currently supporting dozens of languages with more being added regularly. Our platform’s versatility is enhanced by contributions from our vibrant community of translators. If the language you need isn’t yet supported, we invite you to [add a new language](regional-settings.md) and help expand our multilingual capabilities.
 
 **The current list of supported languages:**
 
-![](https://squaregps.atlassian.net/wiki/images/icons/grey_arrow_down.png)
+<details>
 
-List of supported languages
+<summary>List of supported languages</summary>
 
 1. Albanian
 2. Arabic
@@ -72,21 +73,23 @@ List of supported languages
 51. Turkish
 52. Ukrainian
 
-## Time zone and date / time format
+</details>
+
+### Time zone and date / time format
 
 You can define the default time zone and date / time format. You users will have these settings by default when they first time log in to the system. However, they will be able to change these settings in their profile.
 
-![time and measurement settings](./attachments/screen%20shot%202023-05-07%20at%203.36.26%20pm-20230811-204345.png)
+![time and measurement settings](<attachments/screen shot 2023-05-07 at 3.36.26 pm-20230811-204345.png>)
 
-## Currencies
+### Currencies
 
 Navixy supports all the national currencies used worldwide with 0 to 4 digits after the decimal point.
 
-## Measurement system
+### Measurement system
 
-Navixy gives you an opportunity to choose the measurement system and switch on transliteration for SMS. You may set it up in Account Management→User Defaults→Regional Settings. You may choose from the following measurement systems:
+Navixy gives you an opportunity to choose the measurement system and switch on transliteration for SMS. You may set it up in Account Management→User Defaults→Regional Settings. You may choose from the following measurement systems:
 
-- Metric
-- Imperial
-- US
-- Nautical
+* Metric
+* Imperial
+* US
+* Nautical

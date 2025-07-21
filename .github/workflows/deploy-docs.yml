@@ -21,7 +21,7 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: Prepare content for Jekyll
+      - name: Prepare content for Just the Docs
         run: |
           # Create site directory
           mkdir -p _site_source
@@ -29,11 +29,7 @@ jobs:
           # Copy admin-panel content
           cp -r docs/admin-panel/* _site_source/
           
-          echo "=== ORIGINAL STRUCTURE ==="
-          find _site_source -name "*.md" | sort
-          echo "=== END ORIGINAL STRUCTURE ==="
-          
-          # Rename all README.md files to index.md for clean URLs
+          # Rename all README.md files to index.md
           find _site_source -name "README.md" -exec sh -c '
             dir=$(dirname "$1")
             mv "$1" "$dir/index.md"
@@ -44,393 +40,292 @@ jobs:
           find _site_source -name "*.md" -type f -exec sed -i 's/{% hint style="[^"]*" %}/> **Note:** /g' {} \;
           find _site_source -name "*.md" -type f -exec sed -i 's/{% endhint %}/\n/g' {} \;
           find _site_source -name "*.md" -type f -exec sed -i 's/{% hint %}/> **Note:** /g' {} \;
+
+      - name: Add Just the Docs front matter
+        run: |
+          # Root index page
+          if [ -f _site_source/index.md ]; then
+            cat > temp_index.md << 'EOF'
+          ---
+          layout: default
+          title: Home
+          nav_order: 1
+          description: "Navixy Admin Panel Documentation"
+          permalink: /
+          ---
           
-          # Add front matter to all markdown files
-          for file in $(find _site_source -name "*.md" -type f); do
-            if ! head -1 "$file" | grep -q "^---"; then
-              # Extract title from filename or first heading
-              filename=$(basename "$file" .md)
-              if [ "$filename" = "index" ]; then
-                # For index files, use directory name
-                dirname=$(basename $(dirname "$file"))
-                if [ "$dirname" = "_site_source" ]; then
-                  title="Admin Panel Documentation"
-                else
-                  title=$(echo "$dirname" | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
-                fi
-              else
-                title=$(echo "$filename" | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
-              fi
-              
-              # Create temp file with front matter
-              temp_file="/tmp/temp_$(basename "$file")"
-              echo "---" > "$temp_file"
-              echo "layout: page" >> "$temp_file"
-              echo "title: \"$title\"" >> "$temp_file"
-              echo "---" >> "$temp_file"
-              echo "" >> "$temp_file"
-              cat "$file" >> "$temp_file"
-              mv "$temp_file" "$file"
-              echo "Added front matter to $file with title: $title"
+          EOF
+            tail -n +1 _site_source/index.md >> temp_index.md
+            mv temp_index.md _site_source/index.md
+          fi
+          
+          # Access page
+          if [ -f _site_source/access.md ]; then
+            cat > temp_access.md << 'EOF'
+          ---
+          layout: default
+          title: Access
+          nav_order: 2
+          ---
+          
+          EOF
+            tail -n +1 _site_source/access.md >> temp_access.md
+            mv temp_access.md _site_source/access.md
+          fi
+          
+          # Users section
+          if [ -f _site_source/users/index.md ]; then
+            cat > temp_users.md << 'EOF'
+          ---
+          layout: default
+          title: Users
+          nav_order: 3
+          has_children: true
+          ---
+          
+          EOF
+            tail -n +1 _site_source/users/index.md >> temp_users.md
+            mv temp_users.md _site_source/users/index.md
+          fi
+          
+          # Users children
+          nav_order=1
+          for file in _site_source/users/*.md; do
+            if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
+              title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+              cat > temp_file.md << EOF
+          ---
+          layout: default
+          title: "$title"
+          parent: Users
+          nav_order: $nav_order
+          ---
+          
+          EOF
+              tail -n +1 "$file" >> temp_file.md
+              mv temp_file.md "$file"
+              nav_order=$((nav_order + 1))
             fi
           done
           
-          echo "=== FINAL STRUCTURE ==="
-          find _site_source -name "*.md" | sort
-          echo "=== END FINAL STRUCTURE ==="
-
-      - name: Create navigation data
-        run: |
-          # Create _data directory
-          mkdir -p _site_source/_data
+          # Devices section
+          if [ -f _site_source/devices/index.md ]; then
+            cat > temp_devices.md << 'EOF'
+          ---
+          layout: default
+          title: Devices
+          nav_order: 4
+          has_children: true
+          ---
           
-          # Generate navigation from SUMMARY.md
-          python3 -c "
-          import os
-          import re
-          import yaml
+          EOF
+            tail -n +1 _site_source/devices/index.md >> temp_devices.md
+            mv temp_devices.md _site_source/devices/index.md
+          fi
           
-          def parse_summary():
-              nav = {'main': [], 'sections': {}}
+          # Devices children
+          nav_order=1
+          for file in _site_source/devices/*.md; do
+            if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
+              title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+              cat > temp_file.md << EOF
+          ---
+          layout: default
+          title: "$title"
+          parent: Devices
+          nav_order: $nav_order
+          ---
+          
+          EOF
+              tail -n +1 "$file" >> temp_file.md
+              mv temp_file.md "$file"
+              nav_order=$((nav_order + 1))
+            fi
+          done
+          
+          # Settings section
+          if [ -f _site_source/settings/index.md ]; then
+            cat > temp_settings.md << 'EOF'
+          ---
+          layout: default
+          title: Settings
+          nav_order: 5
+          has_children: true
+          ---
+          
+          EOF
+            tail -n +1 _site_source/settings/index.md >> temp_settings.md
+            mv temp_settings.md _site_source/settings/index.md
+          fi
+          
+          # Settings children (including nested ones)
+          nav_order=1
+          for file in _site_source/settings/*.md; do
+            if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
+              title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+              cat > temp_file.md << EOF
+          ---
+          layout: default
+          title: "$title"
+          parent: Settings
+          nav_order: $nav_order
+          ---
+          
+          EOF
+              tail -n +1 "$file" >> temp_file.md
+              mv temp_file.md "$file"
+              nav_order=$((nav_order + 1))
+            fi
+          done
+          
+          # Settings subdirectories
+          for subdir in _site_source/settings/*/; do
+            if [ -d "$subdir" ]; then
+              subdir_name=$(basename "$subdir")
+              subdir_title=$(echo "$subdir_name" | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
               
-              try:
-                  with open('_site_source/SUMMARY.md', 'r') as f:
-                      content = f.read()
-                      
-                  current_section = None
-                  
-                  for line in content.split('\n'):
-                      line = line.strip()
-                      if not line or line.startswith('#'):
-                          continue
-                      
-                      # Count indentation
-                      indent = 0
-                      original = line
-                      while line.startswith('  '):
-                          indent += 1
-                          line = line[2:]
-                      
-                      # Parse markdown link
-                      match = re.match(r'\* \[(.+?)\]\((.+?)\)', line)
-                      if match:
-                          title = match.group(1)
-                          path = match.group(2)
-                          
-                          # Convert path to Jekyll URL
-                          if path == 'README.md':
-                              url = '/'
-                          elif path.endswith('/README.md'):
-                              url = '/' + path.replace('/README.md', '') + '/'
-                          else:
-                              url = '/' + path.replace('.md', '.html')
-                          
-                          item = {'title': title, 'url': url}
-                          
-                          if indent == 0:
-                              if title in ['Users', 'Devices', 'Settings', 'Plans']:
-                                  current_section = title
-                                  nav['sections'][title] = {'main': item, 'children': []}
-                              else:
-                                  nav['main'].append(item)
-                          elif indent == 1 and current_section:
-                              nav['sections'][current_section]['children'].append(item)
+              # Subdir index
+              if [ -f "$subdir/index.md" ]; then
+                cat > temp_subdir.md << EOF
+          ---
+          layout: default
+          title: "$subdir_title"
+          parent: Settings
+          nav_order: $nav_order
+          has_children: true
+          ---
+          
+          EOF
+                tail -n +1 "$subdir/index.md" >> temp_subdir.md
+                mv temp_subdir.md "$subdir/index.md"
+                nav_order=$((nav_order + 1))
+              fi
               
-              except FileNotFoundError:
-                  print('SUMMARY.md not found, creating basic structure')
-                  nav = {
-                      'main': [
-                          {'title': 'Admin Panel', 'url': '/'},
-                          {'title': 'Access', 'url': '/access.html'}
-                      ],
-                      'sections': {
-                          'Users': {
-                              'main': {'title': 'Users', 'url': '/users/'},
-                              'children': []
-                          }
-                      }
-                  }
-              
-              return nav
+              # Subdir children
+              child_nav=1
+              for file in "$subdir"*.md; do
+                if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
+                  title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+                  cat > temp_file.md << EOF
+          ---
+          layout: default
+          title: "$title"
+          parent: "$subdir_title"
+          grand_parent: Settings
+          nav_order: $child_nav
+          ---
           
-          nav_data = parse_summary()
+          EOF
+                  tail -n +1 "$file" >> temp_file.md
+                  mv temp_file.md "$file"
+                  child_nav=$((child_nav + 1))
+                fi
+              done
+            fi
+          done
           
-          with open('_site_source/_data/navigation.yml', 'w') as f:
-              yaml.dump(nav_data, f, default_flow_style=False, sort_keys=False)
+          # Plans section
+          if [ -f _site_source/plans/index.md ]; then
+            cat > temp_plans.md << 'EOF'
+          ---
+          layout: default
+          title: Plans
+          nav_order: 6
+          has_children: true
+          ---
           
-          print('=== GENERATED NAVIGATION ===')
-          print(yaml.dump(nav_data, default_flow_style=False))
-          print('=== END NAVIGATION ===')
-          "
+          EOF
+            tail -n +1 _site_source/plans/index.md >> temp_plans.md
+            mv temp_plans.md _site_source/plans/index.md
+          fi
+          
+          # Plans children
+          nav_order=1
+          for file in _site_source/plans/*.md; do
+            if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
+              title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+              cat > temp_file.md << EOF
+          ---
+          layout: default
+          title: "$title"
+          parent: Plans
+          nav_order: $nav_order
+          ---
+          
+          EOF
+              tail -n +1 "$file" >> temp_file.md
+              mv temp_file.md "$file"
+              nav_order=$((nav_order + 1))
+            fi
+          done
+          
+          # Reports and Resellers
+          if [ -f _site_source/reports.md ]; then
+            cat > temp_reports.md << 'EOF'
+          ---
+          layout: default
+          title: Reports
+          nav_order: 7
+          ---
+          
+          EOF
+            tail -n +1 _site_source/reports.md >> temp_reports.md
+            mv temp_reports.md _site_source/reports.md
+          fi
+          
+          if [ -f _site_source/resellers.md ]; then
+            cat > temp_resellers.md << 'EOF'
+          ---
+          layout: default
+          title: Resellers
+          nav_order: 8
+          ---
+          
+          EOF
+            tail -n +1 _site_source/resellers.md >> temp_resellers.md
+            mv temp_resellers.md _site_source/resellers.md
+          fi
 
       - name: Create Jekyll configuration
         run: |
           cat > _site_source/_config.yml << 'EOF'
           title: "Admin Panel Documentation"
-          description: "Administration Guide"  
+          description: "Navixy Admin Panel Administration Guide"
           baseurl: "/udoc"
           url: "https://amasyunin.github.io"
           
-          theme: minima
+          remote_theme: just-the-docs/just-the-docs
+          
+          # Just the Docs theme configuration
+          color_scheme: nil
+          
+          # Search enabled
+          search_enabled: true
+          
+          # Navigation configuration
+          nav_sort: case_insensitive
+          
+          # Back to top link
+          back_to_top: true
+          back_to_top_text: "Back to top"
           
           markdown: kramdown
           highlighter: rouge
           
-          plugins:
-            - jekyll-feed
-            - jekyll-sitemap
-          
-          # Tell Minima which pages to show in header
-          header_pages:
-            - index.md
-            - access.md
+          kramdown:
+            syntax_highlighter_opts:
+              block:
+                line_numbers: false
           
           exclude:
             - SUMMARY.md
             - Gemfile
             - Gemfile.lock
-          EOF
-
-      - name: Create custom navigation include
-        run: |
-          mkdir -p _site_source/_includes
+            - node_modules/
+            - vendor/
           
-          # Create a cleaner header with just main sections
-          cat > _site_source/_includes/header.html << 'EOF'
-          <header class="site-header">
-            <div class="wrapper">
-              <a class="site-title" rel="author" href="{{ "/" | relative_url }}">{{ site.title | escape }}</a>
-              
-              <nav class="site-nav">
-                <input type="checkbox" id="nav-trigger" class="nav-trigger" />
-                <label for="nav-trigger">
-                  <span class="menu-icon">
-                    <svg viewBox="0 0 18 15" width="18px" height="15px">
-                      <path d="m0,3h18v2h-18z"/>
-                      <path d="m0,8h18v2h-18z"/>  
-                      <path d="m0,13h18v2h-18z"/>
-                    </svg>
-                  </span>
-                </label>
-
-                <div class="trigger">
-                  <!-- Just main navigation -->
-                  {% for item in site.data.navigation.main %}
-                    <a class="page-link" href="{{ item.url | relative_url }}">{{ item.title }}</a>
-                  {% endfor %}
-                  
-                  <!-- Just section main pages -->
-                  {% for section in site.data.navigation.sections %}
-                    <a class="page-link" href="{{ section[1].main.url | relative_url }}">{{ section[1].main.title }}</a>
-                  {% endfor %}
-                </div>
-              </nav>
-            </div>
-          </header>
-          EOF
-          
-          # Create a sidebar navigation for detailed TOC
-          cat > _site_source/_includes/sidebar.html << 'EOF'
-          <div class="sidebar">
-            <div class="sidebar-content">
-              <h3>Table of Contents</h3>
-              
-              <!-- Main pages -->
-              {% for item in site.data.navigation.main %}
-                <div class="nav-item">
-                  <a href="{{ item.url | relative_url }}" 
-                     class="nav-link {% if page.url == item.url %}active{% endif %}">
-                    {{ item.title }}
-                  </a>
-                </div>
-              {% endfor %}
-              
-              <!-- Sections with children -->
-              {% for section in site.data.navigation.sections %}
-                <div class="nav-section">
-                  <a href="{{ section[1].main.url | relative_url }}" 
-                     class="nav-section-title {% if page.url contains section[1].main.url %}active{% endif %}">
-                    {{ section[1].main.title }}
-                  </a>
-                  
-                  {% if section[1].children.size > 0 %}
-                    <ul class="nav-children">
-                      {% for child in section[1].children %}
-                        <li>
-                          <a href="{{ child.url | relative_url }}"
-                             class="nav-child-link {% if page.url == child.url %}active{% endif %}">
-                            {{ child.title }}
-                          </a>
-                        </li>
-                      {% endfor %}
-                    </ul>
-                  {% endif %}
-                </div>
-              {% endfor %}
-            </div>
-          </div>
-          EOF
-
-      - name: Create custom layout with sidebar
-        run: |
-          mkdir -p _site_source/_layouts
-          
-          cat > _site_source/_layouts/default.html << 'EOF'
-          <!DOCTYPE html>
-          <html lang="{{ page.lang | default: site.lang | default: "en" }}">
-
-            {%- include head.html -%}
-
-            <body>
-
-              {%- include header.html -%}
-
-              <div class="page-wrapper">
-                {%- include sidebar.html -%}
-                
-                <main class="page-content" aria-label="Content">
-                  <div class="wrapper">
-                    {{ content }}
-                  </div>
-                </main>
-              </div>
-
-              {%- include footer.html -%}
-
-            </body>
-
-          </html>
-          EOF
-
-      - name: Add sidebar CSS
-        run: |
-          mkdir -p _site_source/assets/css
-          
-          cat > _site_source/assets/css/main.scss << 'EOF'
-          ---
-          ---
-          @import "{{ site.theme }}";
-          
-          .page-wrapper {
-            display: flex;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 15px;
-          }
-          
-          .sidebar {
-            width: 280px;
-            flex-shrink: 0;
-            background: #f8f9fa;
-            border-right: 1px solid #e1e4e8;
-            height: calc(100vh - 160px);
-            overflow-y: auto;
-            position: sticky;
-            top: 20px;
-          }
-          
-          .sidebar-content {
-            padding: 20px;
-          }
-          
-          .sidebar h3 {
-            margin-bottom: 20px;
-            font-size: 16px;
-            color: #24292e;
-            border-bottom: 1px solid #e1e4e8;
-            padding-bottom: 8px;
-          }
-          
-          .nav-item {
-            margin-bottom: 8px;
-          }
-          
-          .nav-link {
-            display: block;
-            padding: 8px 12px;
-            color: #586069;
-            text-decoration: none;
-            border-radius: 6px;
-            font-size: 14px;
-            transition: all 0.2s;
-          }
-          
-          .nav-link:hover,
-          .nav-link.active {
-            background-color: #0366d6;
-            color: white;
-          }
-          
-          .nav-section {
-            margin-bottom: 16px;
-          }
-          
-          .nav-section-title {
-            display: block;
-            padding: 8px 12px;
-            font-weight: 600;
-            color: #24292e;
-            text-decoration: none;
-            border-radius: 6px;
-            transition: all 0.2s;
-          }
-          
-          .nav-section-title:hover,
-          .nav-section-title.active {
-            background-color: #f1f8ff;
-            color: #0366d6;
-          }
-          
-          .nav-children {
-            list-style: none;
-            padding: 0;
-            margin: 8px 0 0 0;
-          }
-          
-          .nav-children li {
-            margin-bottom: 4px;
-          }
-          
-          .nav-child-link {
-            display: block;
-            padding: 6px 12px 6px 24px;
-            color: #6a737d;
-            text-decoration: none;
-            font-size: 13px;
-            border-radius: 6px;
-            transition: all 0.2s;
-          }
-          
-          .nav-child-link:hover,
-          .nav-child-link.active {
-            background-color: #f1f8ff;
-            color: #0366d6;
-          }
-          
-          .page-content {
-            flex: 1;
-            min-width: 0;
-            padding-left: 40px;
-          }
-          
-          @media (max-width: 768px) {
-            .page-wrapper {
-              flex-direction: column;
-            }
-            
-            .sidebar {
-              width: 100%;
-              height: auto;
-              position: static;
-              border-right: none;
-              border-bottom: 1px solid #e1e4e8;
-            }
-            
-            .page-content {
-              padding-left: 0;
-              padding-top: 20px;
-            }
-          }
+          plugins:
+            - jekyll-seo-tag
           EOF
 
       - name: Build with Jekyll

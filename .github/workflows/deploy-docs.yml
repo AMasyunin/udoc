@@ -1,11 +1,9 @@
-# .github/workflows/deploy-docs.yml
-name: Deploy Admin Panel Docs to GitHub Pages
+name: Deploy Admin Panel Docs
 
 on:
   push:
     branches: [ userdocs ]
-    paths: 
-      - 'docs/admin-panel/**'
+    paths: [ 'docs/admin-panel/**' ]
   workflow_dispatch:
 
 permissions:
@@ -13,42 +11,46 @@ permissions:
   pages: write
   id-token: write
 
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout source
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: userdocs
-          
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-        
+
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.1'
-          bundler-cache: true
-          
-      - name: Create Jekyll site structure
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Prepare content and fix GitBook syntax
         run: |
           # Create site directory
           mkdir -p _site_source
           
-          # Copy admin-panel content to root of site
+          # Copy admin-panel content
           cp -r docs/admin-panel/* _site_source/
           
-          # Rename README.md to index.md for Jekyll homepage
+          # Rename README.md to index.md for Jekyll
           if [ -f _site_source/README.md ]; then
             mv _site_source/README.md _site_source/index.md
           fi
           
-      - name: Create Jekyll configuration
+          # Fix GitBook hint tags and other custom syntax
+          find _site_source -name "*.md" -type f -exec sed -i 's/{% hint style="[^"]*" %}/> **Note:** /g' {} \;
+          find _site_source -name "*.md" -type f -exec sed -i 's/{% endhint %}/\n/g' {} \;
+          find _site_source -name "*.md" -type f -exec sed -i 's/{% hint %}/> **Note:** /g' {} \;
+          
+          # Fix other potential GitBook syntax
+          find _site_source -name "*.md" -type f -exec sed -i 's/{% page-ref page="[^"]*" %}/\[See related page\]/g' {} \;
+          find _site_source -name "*.md" -type f -exec sed -i 's/{% embed url="[^"]*" %}/\[Embedded content\]/g' {} \;
+          find _site_source -name "*.md" -type f -exec sed -i 's/{% code title="[^"]*" %}/```/g' {} \;
+          find _site_source -name "*.md" -type f -exec sed -i 's/{% endcode %}/```/g' {} \;
+          
+      - name: Create Jekyll config
         run: |
           cat > _site_source/_config.yml << 'EOF'
           title: "Admin Panel Documentation"
@@ -58,6 +60,10 @@ jobs:
           
           theme: minima
           
+          plugins:
+            - jekyll-feed
+            - jekyll-sitemap
+          
           markdown: kramdown
           kramdown:
             input: GFM
@@ -65,59 +71,23 @@ jobs:
           
           highlighter: rouge
           
-          plugins:
-            - jekyll-feed
-            - jekyll-sitemap
-            - jekyll-relative-links
-            - jekyll-optional-front-matter
-            - jekyll-readme-index
-            - jekyll-titles-from-headings
-          
-          # Enable relative links
+          # Handle relative links
           relative_links:
-            enabled: true
-            collections: false
-          
-          # Auto-generate front matter
-          optional_front_matter:
-            enabled: true
-          
-          # Use README files as index pages
-          readme_index:
-            enabled: true
-            remove_originals: false
-          
-          # Generate titles from headings
-          titles_from_headings:
-            enabled: true
-            strip_title: true
-            collections: false
-          
-          # Minima theme settings
-          minima:
-            skin: classic
-          
-          # Header and navigation
-          header_pages:
-            - index.md
+            enabled: false
           
           # Include all markdown files
           include:
             - README.md
             - "*.md"
           
-          # Exclude system files
+          # Exclude problematic files
           exclude:
-            - .github/
-            - .gitignore
-            - Gemfile
-            - Gemfile.lock
-            - "*.gem"
-            - "*.gemspec"
+            - .gitbook*
+            - book.json
             - node_modules/
-            - vendor/
+            - "*.log"
           EOF
-          
+
       - name: Create Gemfile
         run: |
           cat > _site_source/Gemfile << 'EOF'
@@ -127,24 +97,18 @@ jobs:
           gem 'minima'
           gem 'jekyll-feed'
           gem 'jekyll-sitemap'
-          gem 'jekyll-relative-links'
-          gem 'jekyll-optional-front-matter'
-          gem 'jekyll-readme-index'
-          gem 'jekyll-titles-from-headings'
           gem 'webrick'
           EOF
-          
-      - name: Build Jekyll site
+
+      - name: Build with Jekyll
         run: |
           cd _site_source
           bundle install
-          bundle exec jekyll build --destination ../_site
-          
+          bundle exec jekyll build --destination ../_site --verbose
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
-        with:
-          path: '_site'
-          
+
   deploy:
     environment:
       name: github-pages

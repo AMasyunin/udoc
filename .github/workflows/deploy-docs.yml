@@ -142,7 +142,7 @@ jobs:
                   nav_html.append(f'<li class="nav-sub-subsection"><a href="{item["url"]}">{item["title"]}</a></li>')
           
           # Save navigation to _includes directory for Jekyll
-          mkdir -p _site_source/_includes
+          os.makedirs('_site_source/_includes', exist_ok=True)
           with open('_site_source/_includes/navigation.html', 'w') as f:
               f.write('\n'.join(nav_html))
               

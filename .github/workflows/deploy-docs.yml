@@ -18,630 +18,275 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.1'
-
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: Prepare content
+      - name: Prepare content for Jekyll
         run: |
+          # Create site directory
           mkdir -p _site_source
+          
+          # Copy admin-panel content
           cp -r docs/admin-panel/* _site_source/
           
-          echo "=== ANALYZING REPOSITORY STRUCTURE ==="
+          echo "=== ORIGINAL STRUCTURE ==="
           find _site_source -name "*.md" | sort
-          echo "=== END STRUCTURE ANALYSIS ==="
+          echo "=== END ORIGINAL STRUCTURE ==="
           
-          if [ -f _site_source/README.md ]; then
-            mv _site_source/README.md _site_source/index.md
-            echo "Renamed README.md to index.md"
-          fi
+          # Rename all README.md files to index.md for clean URLs
+          find _site_source -name "README.md" -exec sh -c '
+            dir=$(dirname "$1")
+            mv "$1" "$dir/index.md"
+            echo "Renamed $1 to $dir/index.md"
+          ' _ {} \;
           
-          # Fix GitBook syntax and add front matter to all markdown files
+          # Fix GitBook syntax
           find _site_source -name "*.md" -type f -exec sed -i 's/{% hint style="[^"]*" %}/> **Note:** /g' {} \;
           find _site_source -name "*.md" -type f -exec sed -i 's/{% endhint %}/\n/g' {} \;
           find _site_source -name "*.md" -type f -exec sed -i 's/{% hint %}/> **Note:** /g' {} \;
           
-          # Add front matter to markdown files that don't have it
-          for file in _site_source/*.md _site_source/*/*.md _site_source/*/*/*.md _site_source/*/*/*/*.md; do
-            if [ -f "$file" ]; then
-              if ! head -1 "$file" | grep -q "^---"; then
-                temp_file="/tmp/temp_$(basename "$file")"
-                echo "---" > "$temp_file"
-                echo "layout: default" >> "$temp_file"
-                echo "---" >> "$temp_file"
-                echo "" >> "$temp_file"
-                cat "$file" >> "$temp_file"
-                mv "$temp_file" "$file"
-                echo "Added front matter to $(basename "$file")"
+          # Add front matter to all markdown files
+          for file in $(find _site_source -name "*.md" -type f); do
+            if ! head -1 "$file" | grep -q "^---"; then
+              # Extract title from filename or first heading
+              filename=$(basename "$file" .md)
+              if [ "$filename" = "index" ]; then
+                # For index files, use directory name
+                dirname=$(basename $(dirname "$file"))
+                if [ "$dirname" = "_site_source" ]; then
+                  title="Admin Panel Documentation"
+                else
+                  title=$(echo "$dirname" | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+                fi
+              else
+                title=$(echo "$filename" | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
               fi
+              
+              # Create temp file with front matter
+              temp_file="/tmp/temp_$(basename "$file")"
+              echo "---" > "$temp_file"
+              echo "layout: page" >> "$temp_file"
+              echo "title: \"$title\"" >> "$temp_file"
+              echo "---" >> "$temp_file"
+              echo "" >> "$temp_file"
+              cat "$file" >> "$temp_file"
+              mv "$temp_file" "$file"
+              echo "Added front matter to $file with title: $title"
             fi
           done
+          
+          echo "=== FINAL STRUCTURE ==="
+          find _site_source -name "*.md" | sort
+          echo "=== END FINAL STRUCTURE ==="
 
-      - name: Generate navigation from SUMMARY.md
+      - name: Create navigation data
         run: |
-          cat > nav_generator.py << 'EOF'
-          import re
+          # Create _data directory
+          mkdir -p _site_source/_data
+          
+          # Generate navigation from SUMMARY.md
+          python3 -c "
           import os
-          from pathlib import Path
+          import re
+          import yaml
           
           def parse_summary():
-              """Parse SUMMARY.md to create navigation structure"""
-              nav_items = []
+              nav = {'main': [], 'sections': {}}
               
               try:
-                  with open('_site_source/SUMMARY.md', 'r', encoding='utf-8') as f:
+                  with open('_site_source/SUMMARY.md', 'r') as f:
                       content = f.read()
+                      
+                  current_section = None
                   
-                  # Parse markdown links: * [Title](path.md)
-                  lines = content.split('\n')
-                  for line in lines:
+                  for line in content.split('\n'):
                       line = line.strip()
                       if not line or line.startswith('#'):
                           continue
                       
-                      # Count indentation level
-                      indent_level = 0
-                      original_line = line
+                      # Count indentation
+                      indent = 0
+                      original = line
                       while line.startswith('  '):
-                          indent_level += 1
+                          indent += 1
                           line = line[2:]
                       
-                      # Extract link
-                      link_match = re.match(r'\* \[(.+?)\]\((.+?)\)', line)
-                      if link_match:
-                          title = link_match.group(1)
-                          path = link_match.group(2)
+                      # Parse markdown link
+                      match = re.match(r'\* \[(.+?)\]\((.+?)\)', line)
+                      if match:
+                          title = match.group(1)
+                          path = match.group(2)
                           
-                          # Convert path to URL
+                          # Convert path to Jekyll URL
                           if path == 'README.md':
                               url = '/'
                           elif path.endswith('/README.md'):
-                              # For directory README files, use directory path
-                              dir_path = path.replace('/README.md', '')
-                              url = '/' + dir_path + '/'
+                              url = '/' + path.replace('/README.md', '') + '/'
                           else:
-                              # For regular files - Jekyll creates .html files
-                              url = '/' + path.replace('.md', '.html').replace('\\', '/')
+                              url = '/' + path.replace('.md', '.html')
                           
-                          nav_items.append({
-                              'title': title,
-                              'url': url,
-                              'path': path,
-                              'level': indent_level
-                          })
+                          item = {'title': title, 'url': url}
+                          
+                          if indent == 0:
+                              if title in ['Users', 'Devices', 'Settings', 'Plans']:
+                                  current_section = title
+                                  nav['sections'][title] = {'main': item, 'children': []}
+                              else:
+                                  nav['main'].append(item)
+                          elif indent == 1 and current_section:
+                              nav['sections'][current_section]['children'].append(item)
               
               except FileNotFoundError:
-                  print("SUMMARY.md not found, using fallback navigation")
-                  return []
+                  print('SUMMARY.md not found, creating basic structure')
+                  nav = {
+                      'main': [
+                          {'title': 'Admin Panel', 'url': '/'},
+                          {'title': 'Access', 'url': '/access.html'}
+                      ],
+                      'sections': {
+                          'Users': {
+                              'main': {'title': 'Users', 'url': '/users/'},
+                              'children': []
+                          }
+                      }
+                  }
               
-              return nav_items
+              return nav
           
-          # Parse SUMMARY.md
-          nav_items = parse_summary()
+          nav_data = parse_summary()
           
-          print('=== PARSED NAVIGATION FROM SUMMARY.MD ===')
-          for item in nav_items:
-              indent = '  ' * item['level']
-              print(f'{indent}- {item["title"]}: {item["url"]} (level {item["level"]})')
-          print('=== END PARSED NAVIGATION ===')
+          with open('_site_source/_data/navigation.yml', 'w') as f:
+              yaml.dump(nav_data, f, default_flow_style=False, sort_keys=False)
           
-          # Generate HTML navigation with collapsible GitBook-style structure
-          nav_html = []
-          
-          # Start with main pages
-          for item in nav_items:
-              if item['level'] == 0 and item['title'] not in ['Users', 'Devices', 'Settings', 'Plans']:
-                  nav_html.append(f'<li><a href="{item["url"]}">{item["title"]}</a></li>')
-          
-          # Add collapsible sections
-          sections = ['Users', 'Devices', 'Settings', 'Plans']
-          for section in sections:
-              section_items = [item for item in nav_items if item['level'] >= 0 and (
-                  item['title'] == section or 
-                  (item['level'] > 0 and any(prev['title'] == section and prev['level'] == 0 for prev in nav_items[:nav_items.index(item)]))
-              )]
-              
-              if section_items:
-                  # Find section main page
-                  section_main = next((item for item in section_items if item['title'] == section), None)
-                  if section_main:
-                      nav_html.append('<li class="nav-section">')
-                      nav_html.append(f'  <div class="nav-section-toggle" onclick="toggleSection(\\"{section.lower()}\\")">')
-                      nav_html.append('    <span class="nav-arrow">▶</span>')
-                      nav_html.append(f'    <a href="{section_main["url"]}">{section}</a>')
-                      nav_html.append('  </div>')
-                      nav_html.append(f'  <ul class="nav-subsection-list" id="{section.lower()}-list" style="display: none;">')
-                      
-                      # Add subsection items
-                      current_subsection = None
-                      for item in section_items[1:]:  # Skip the main section item
-                          if item['level'] == 1:
-                              nav_html.append(f'    <li><a href="{item["url"]}">{item["title"]}</a></li>')
-                              current_subsection = item['title']
-                          elif item['level'] == 2:
-                              nav_html.append(f'    <li class="nav-sub-item"><a href="{item["url"]}">{item["title"]}</a></li>')
-                      
-                      nav_html.append('  </ul>')
-                      nav_html.append('</li>')
-          
-          # Add remaining main pages
-          for item in nav_items:
-              if item['level'] == 0 and item['title'] in ['Reports', 'Resellers']:
-                  nav_html.append(f'<li><a href="{item["url"]}">{item["title"]}</a></li>')
-          
-          # Debug the URLs
-          print('=== CHECKING URL GENERATION ===')
-          for item in nav_items:
-              print(f'Title: "{item["title"]}" | Path: "{item["path"]}" | URL: "{item["url"]}" | Level: {item["level"]}')
-          print('=== END URL CHECK ===')
-          
-          # Save navigation to _includes directory for Jekyll
-          os.makedirs('_site_source/_includes', exist_ok=True)
-          with open('_site_source/_includes/navigation.html', 'w') as f:
-              f.write('\n'.join(nav_html))
-              
-          print('=== GENERATED NAVIGATION HTML ===')
-          print('\n'.join(nav_html))
-          print('=== END NAVIGATION HTML ===')
-          EOF
-          
-          python3 nav_generator.py
+          print('=== GENERATED NAVIGATION ===')
+          print(yaml.dump(nav_data, default_flow_style=False))
+          print('=== END NAVIGATION ===')
+          "
 
-      - name: Create Jekyll config
+      - name: Create Jekyll configuration
         run: |
           cat > _site_source/_config.yml << 'EOF'
           title: "Admin Panel Documentation"
-          description: "Administration Guide"
+          description: "Administration Guide"  
           baseurl: "/udoc"
           url: "https://amasyunin.github.io"
           
-          markdown: kramdown
-          kramdown:
-            input: GFM
-            syntax_highlighter: rouge
-            hard_wrap: false
+          theme: minima
           
+          markdown: kramdown
           highlighter: rouge
           
           plugins:
+            - jekyll-feed
             - jekyll-sitemap
           
-          defaults:
-            - scope:
-                path: ""
-                type: "pages"
-              values:
-                layout: "default"
-          
-          include:
-            - README.md
-            - "*.md"
+          # Tell Minima which pages to show in header
+          header_pages:
+            - index.md
+            - access.md
           
           exclude:
-            - .gitbook*
-            - book.json
-            - node_modules/
-            - "*.log"
+            - SUMMARY.md
             - Gemfile
             - Gemfile.lock
-            - SUMMARY.md
-            - nav_generator.py
           EOF
 
-      - name: Create layout
+      - name: Create custom navigation include
         run: |
-          mkdir -p _site_source/_layouts
+          mkdir -p _site_source/_includes
           
-          cat > _site_source/_layouts/default.html << 'HTMLEOF'
-          <!DOCTYPE html>
-          <html lang="en">
-          <head>
-              <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <title>{% if page.title %}{{ page.title }}{% else %}{{ site.title }}{% endif %}</title>
-              <style>
-                  * {
-                      margin: 0;
-                      padding: 0;
-                      box-sizing: border-box;
-                  }
-                  
-                  body {
-                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                      line-height: 1.6;
-                      color: #24292e;
-                      background: #ffffff;
-                      display: flex;
-                      min-height: 100vh;
-                  }
-                  
-                  .sidebar {
-                      width: 280px;
-                      background: #f6f8fa;
-                      border-right: 1px solid #e1e4e8;
-                      padding: 20px;
-                      overflow-y: auto;
-                      flex-shrink: 0;
-                  }
-                  
-                  .sidebar h2 {
-                      font-size: 16px;
-                      margin-bottom: 20px;
-                      color: #24292e;
-                      border-bottom: 1px solid #e1e4e8;
-                      padding-bottom: 8px;
-                  }
-                  
-                  .sidebar ul {
-                      list-style: none;
-                  }
-                  
-                  .sidebar li {
-                      margin-bottom: 6px;
-                  }
-                  
-                  .sidebar a {
-                      display: block;
-                      padding: 8px 12px;
-                      color: #586069;
-                      text-decoration: none;
-                      border-radius: 6px;
-                      font-size: 14px;
-                      transition: all 0.2s;
-                  }
-                  
-                  .sidebar a:hover {
-                      background-color: #e1e4e8;
-                      color: #24292e;
-                  }
-                  
-                  .sidebar .nav-section {
-                      margin-bottom: 8px;
-                  }
-                  
-                  .sidebar .nav-section-toggle {
-                      display: flex;
-                      align-items: center;
-                      padding: 8px 12px;
-                      cursor: pointer;
-                      border-radius: 6px;
-                      transition: background-color 0.2s;
-                  }
-                  
-                  .sidebar .nav-section-toggle:hover {
-                      background-color: #e1e4e8;
-                  }
-                  
-                  .sidebar .nav-arrow {
-                      margin-right: 8px;
-                      font-size: 10px;
-                      transition: transform 0.2s;
-                      color: #6a737d;
-                  }
-                  
-                  .sidebar .nav-arrow.expanded {
-                      transform: rotate(90deg);
-                  }
-                  
-                  .sidebar .nav-section-toggle a {
-                      color: #24292e;
-                      font-weight: 500;
-                      text-decoration: none;
-                      margin-left: 4px;
-                  }
-                  
-                  .sidebar .nav-subsection-list {
-                      list-style: none;
-                      padding-left: 20px;
-                      margin: 0;
-                  }
-                  
-                  .sidebar .nav-subsection-list li {
-                      margin-bottom: 4px;
-                  }
-                  
-                  .sidebar .nav-subsection-list a {
-                      padding: 4px 8px;
-                      color: #6a737d;
-                      font-size: 13px;
-                  }
-                  
-                  .sidebar .nav-sub-item a {
-                      padding-left: 20px;
-                      font-size: 12px;
-                      color: #8a8a8a;
-                  }
-                  
-                  .content {
-                      flex: 1;
-                      padding: 40px;
-                      overflow-y: auto;
-                  }
-                  
-                  .content h1 {
-                      font-size: 32px;
-                      margin-bottom: 20px;
-                      border-bottom: 1px solid #e1e4e8;
-                      padding-bottom: 10px;
-                  }
-                  
-                  .content h2 {
-                      font-size: 24px;
-                      margin-top: 32px;
-                      margin-bottom: 16px;
-                  }
-                  
-                  .content h3 {
-                      font-size: 20px;
-                      margin-top: 24px;
-                      margin-bottom: 12px;
-                  }
-                  
-                  .content p {
-                      margin-bottom: 16px;
-                  }
-                  
-                  .content ul, .content ol {
-                      margin-bottom: 16px;
-                      padding-left: 20px;
-                  }
-                  
-                  .content li {
-                      margin-bottom: 4px;
-                  }
-                  
-                  .content code {
-                      background: #f6f8fa;
-                      padding: 2px 6px;
-                      border-radius: 3px;
-                      font-family: 'SFMono-Regular', Consolas, monospace;
-                      font-size: 0.9em;
-                  }
-                  
-                  .content pre {
-                      background: #f6f8fa;
-                      padding: 16px;
-                      border-radius: 6px;
-                      overflow-x: auto;
-                      margin-bottom: 16px;
-                      border: 1px solid #e1e4e8;
-                  }
-                  
-                  .content pre code {
-                      background: none;
-                      padding: 0;
-                  }
-                  
-                  .content blockquote {
-                      border-left: 4px solid #0366d6;
-                      background: #f6f8fa;
-                      padding: 16px;
-                      margin: 16px 0;
-                      border-radius: 0 6px 6px 0;
-                  }
-                  
-                  .content blockquote p {
-                      margin-bottom: 8px;
-                  }
-                  
-                  .content blockquote p:last-child {
-                      margin-bottom: 0;
-                  }
-                  
-                  .content table {
-                      width: 100%;
-                      border-collapse: collapse;
-                      margin-bottom: 16px;
-                  }
-                  
-                  .content th, .content td {
-                      border: 1px solid #e1e4e8;
-                      padding: 8px 12px;
-                      text-align: left;
-                  }
-                  
-                  .content th {
-                      background: #f6f8fa;
-                      font-weight: 600;
-                  }
-                  
-                  .content img {
-                      max-width: 100%;
-                      height: auto;
-                      margin: 16px 0;
-                      border-radius: 6px;
-                  }
-                  
-                  .content a {
-                      color: #0366d6;
-                      text-decoration: none;
-                  }
-                  
-                  .content a:hover {
-                      text-decoration: underline;
-                  }
-                  
-                  @media (max-width: 768px) {
-                      body {
-                          flex-direction: column;
-                      }
-                      
-                      .sidebar {
-                          width: 100%;
-                          border-right: none;
-                          border-bottom: 1px solid #e1e4e8;
-                      }
-                      
-                      .content {
-                          padding: 20px;
-                      }
-                  }
-              </style>
-          </head>
-          <body>
-              <nav class="sidebar">
-                  <h2>{{ site.title }}</h2>
-                  <ul>
-                      {% include navigation.html %}
-                  </ul>
-              </nav>
+          cat > _site_source/_includes/header.html << 'EOF'
+          <header class="site-header">
+            <div class="wrapper">
+              <a class="site-title" rel="author" href="{{ "/" | relative_url }}">{{ site.title | escape }}</a>
               
-              <main class="content">
-                  {{ content }}
-              </main>
-              
-              <script>
-                  function toggleSection(sectionId) {
-                      const list = document.getElementById(sectionId + '-list');
-                      const arrow = document.querySelector(`[onclick="toggleSection('${sectionId}')"] .nav-arrow`);
-                      
-                      if (list.style.display === 'none') {
-                          list.style.display = 'block';
-                          arrow.classList.add('expanded');
-                      } else {
-                          list.style.display = 'none';
-                          arrow.classList.remove('expanded');
-                      }
-                  }
-                  
-                  // Auto-expand section containing current page
-                  document.addEventListener('DOMContentLoaded', function() {
-                      const currentPath = window.location.pathname;
-                      const sections = ['users', 'devices', 'settings', 'plans'];
-                      
-                      sections.forEach(section => {
-                          if (currentPath.includes('/' + section + '/')) {
-                              toggleSection(section);
-                          }
-                      });
-                  });
-              </script>
-          </body>
-          </html>
-          HTMLEOF
+              <nav class="site-nav">
+                <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+                <label for="nav-trigger">
+                  <span class="menu-icon">
+                    <svg viewBox="0 0 18 15" width="18px" height="15px">
+                      <path d="m0,3h18v2h-18z"/>
+                      <path d="m0,8h18v2h-18z"/>  
+                      <path d="m0,13h18v2h-18z"/>
+                    </svg>
+                  </span>
+                </label>
 
-      - name: Create Gemfile
+                <div class="trigger">
+                  <!-- Main pages -->
+                  {% for item in site.data.navigation.main %}
+                    <a class="page-link" href="{{ item.url | relative_url }}">{{ item.title }}</a>
+                  {% endfor %}
+                  
+                  <!-- Section dropdowns -->
+                  {% for section in site.data.navigation.sections %}
+                    <div class="dropdown">
+                      <a class="page-link dropdown-toggle" href="{{ section[1].main.url | relative_url }}">
+                        {{ section[1].main.title }} ▼
+                      </a>
+                      <div class="dropdown-content">
+                        <a href="{{ section[1].main.url | relative_url }}">{{ section[1].main.title }} Overview</a>
+                        {% for child in section[1].children %}
+                          <a href="{{ child.url | relative_url }}">{{ child.title }}</a>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+              </nav>
+            </div>
+          </header>
+          EOF
+
+      - name: Add dropdown CSS
         run: |
-          cat > _site_source/Gemfile << 'EOF'
-          source 'https://rubygems.org'
+          mkdir -p _site_source/assets/css
           
-          gem 'jekyll', '~> 4.3.0'
-          gem 'jekyll-sitemap'
-          gem 'webrick'
+          cat > _site_source/assets/css/main.scss << 'EOF'
+          ---
+          ---
+          @import "{{ site.theme }}";
+          
+          .dropdown {
+            position: relative;
+            display: inline-block;
+          }
+          
+          .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 200px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            right: 0;
+          }
+          
+          .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+          }
+          
+          .dropdown-content a:hover {
+            background-color: #f1f1f1;
+          }
+          
+          .dropdown:hover .dropdown-content {
+            display: block;
+          }
+          
+          .dropdown-toggle {
+            cursor: pointer;
+          }
           EOF
 
       - name: Build with Jekyll
-        run: |
-          cd _site_source
-          
-          echo "=== FILES BEFORE JEKYLL BUILD ==="
-          find . -type f | sort
-          echo "=== END FILES LISTING ==="
-          
-          echo "=== CHECKING CRITICAL FILES ==="
-          if [ -f index.md ]; then
-            echo "✓ index.md exists"
-            echo "First few lines:"
-            head -5 index.md
-          else
-            echo "✗ index.md MISSING!"
-          fi
-          
-          if [ -f _config.yml ]; then
-            echo "✓ _config.yml exists"
-          else
-            echo "✗ _config.yml MISSING!"
-          fi
-          
-          if [ -f _layouts/default.html ]; then
-            echo "✓ default.html layout exists"
-          else
-            echo "✗ default.html layout MISSING!"
-          fi
-          echo "=== END CRITICAL FILES CHECK ==="
-          
-          bundle install
-          
-          echo "=== RUNNING JEKYLL BUILD ==="
-          bundle exec jekyll build --destination ../_site --verbose --trace
-          echo "=== JEKYLL BUILD COMPLETE ==="
-          
-          echo "=== FILES AFTER JEKYLL BUILD ==="
-          find ../_site -type f | sort
-          echo "=== END BUILD OUTPUT ==="
-          
-          echo "=== CHECKING FOR INDEX.HTML ==="
-          if [ -f ../_site/index.html ]; then
-            echo "✓ index.html was created"
-            echo "File size: $(wc -c < ../_site/index.html) bytes"
-            echo "First few lines:"
-            head -10 ../_site/index.html
-          else
-            echo "✗ index.html was NOT created!"
-            echo "Available files in _site root:"
-            ls -la ../_site/ || echo "No _site directory!"
-          fi
-          echo "=== END INDEX.HTML CHECK ==="
-
-      - name: Create fallback if build fails
-        run: |
-          # If Jekyll failed to create index.html, create a simple fallback
-          if [ ! -f _site/index.html ]; then
-            echo "Jekyll build failed, creating fallback site"
-            mkdir -p _site
-            
-            # Create a simple HTML file with navigation
-            cat > _site/index.html << 'FALLBACKEOF'
-          <!DOCTYPE html>
-          <html lang="en">
-          <head>
-              <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <title>Admin Panel Documentation</title>
-              <style>
-                  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 40px; }
-                  h1 { color: #24292e; border-bottom: 1px solid #e1e4e8; padding-bottom: 10px; }
-                  .nav-list { list-style: none; padding: 0; }
-                  .nav-list li { margin: 8px 0; }
-                  .nav-list a { color: #0366d6; text-decoration: none; }
-                  .nav-list a:hover { text-decoration: underline; }
-                  .section-header { font-weight: bold; margin-top: 20px; color: #586069; }
-              </style>
-          </head>
-          <body>
-              <h1>Admin Panel Documentation</h1>
-              <p>The Navixy Admin Panel is a powerful tool that allows administrators to customize the GPS tracking service platform.</p>
-              
-              <h2>Navigation</h2>
-              <ul class="nav-list">
-                  <li><a href="#overview">Overview</a></li>
-                  <li><a href="#access">Access</a></li>
-                  <li class="section-header">Devices</li>
-                  <li><a href="#devices">Device Management</a></li>
-                  <li><a href="#air-console">Air Console</a></li>
-                  <li class="section-header">Plans</li>
-                  <li><a href="#plans">Plan Management</a></li>
-                  <li><a href="#activation">Activation Codes</a></li>
-                  <li class="section-header">Settings</li>
-                  <li><a href="#settings">Settings</a></li>
-                  <li><a href="#branding">Branding Options</a></li>
-                  <li class="section-header">Users</li>
-                  <li><a href="#users">User Management</a></li>
-              </ul>
-              
-              <p><em>Note: This is a simplified fallback. The full documentation should load once Jekyll builds successfully.</em></p>
-          </body>
-          </html>
-          FALLBACKEOF
-            
-            echo "✓ Fallback index.html created"
-          else
-            echo "✓ Jekyll build succeeded, index.html exists"
-          fi
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./_site_source
+          destination: ./_site
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

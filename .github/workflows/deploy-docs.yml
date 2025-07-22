@@ -71,9 +71,9 @@ jobs:
               
               # Check if this is a top-level section index file
               if [[ "$file" == *"/users/index.md" ]] || [[ "$file" == *"/devices/index.md" ]] || [[ "$file" == *"/settings/index.md" ]] || [[ "$file" == *"/plans/index.md" ]]; then
-                hide_title="false"
+                hide_title="false"  # Show layout title for section index pages
               else
-                hide_title="true"
+                hide_title="true"   # Hide layout title for sub-pages (they have their own H1)
               fi
               
               cat > temp_file.md << 'EOF'
@@ -353,9 +353,9 @@ jobs:
                   </nav>
                   
                   <main class="content">
-                      {% unless page.hide_title %}
+                      {% if page.hide_title != true %}
                       <h1>{{ page.title }}</h1>
-                      {% endunless %}
+                      {% endif %}
                       {{ content }}
                   </main>
               </div>

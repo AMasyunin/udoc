@@ -21,7 +21,7 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: Prepare content for Just the Docs
+      - name: Prepare content for Minimal Mistakes
         run: |
           # Create site directory
           mkdir -p _site_source
@@ -41,17 +41,17 @@ jobs:
           find _site_source -name "*.md" -type f -exec sed -i 's/{% endhint %}/\n/g' {} \;
           find _site_source -name "*.md" -type f -exec sed -i 's/{% hint %}/> **Note:** /g' {} \;
 
-      - name: Add Just the Docs front matter
+      - name: Add Minimal Mistakes front matter
         run: |
           # Root index page
           if [ -f _site_source/index.md ]; then
             cat > temp_index.md << 'EOF'
           ---
-          layout: default
-          title: Home
-          nav_order: 1
-          description: "Navixy Admin Panel Documentation"
+          layout: single
+          title: "Admin Panel Documentation"
           permalink: /
+          sidebar:
+            nav: "docs"
           ---
           
           EOF
@@ -63,9 +63,11 @@ jobs:
           if [ -f _site_source/access.md ]; then
             cat > temp_access.md << 'EOF'
           ---
-          layout: default
+          layout: single
           title: Access
-          nav_order: 2
+          permalink: /access/
+          sidebar:
+            nav: "docs"
           ---
           
           EOF
@@ -77,10 +79,11 @@ jobs:
           if [ -f _site_source/users/index.md ]; then
             cat > temp_users.md << 'EOF'
           ---
-          layout: default
+          layout: single
           title: Users
-          nav_order: 3
-          has_children: true
+          permalink: /users/
+          sidebar:
+            nav: "docs"
           ---
           
           EOF
@@ -89,22 +92,22 @@ jobs:
           fi
           
           # Users children
-          nav_order=1
           for file in _site_source/users/*.md; do
             if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
               title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+              permalink="/users/$(basename "$file" .md)/"
               cat > temp_file.md << EOF
           ---
-          layout: default
+          layout: single
           title: "$title"
-          parent: Users
-          nav_order: $nav_order
+          permalink: "$permalink"
+          sidebar:
+            nav: "docs"
           ---
           
           EOF
               tail -n +1 "$file" >> temp_file.md
               mv temp_file.md "$file"
-              nav_order=$((nav_order + 1))
             fi
           done
           
@@ -112,10 +115,11 @@ jobs:
           if [ -f _site_source/devices/index.md ]; then
             cat > temp_devices.md << 'EOF'
           ---
-          layout: default
+          layout: single
           title: Devices
-          nav_order: 4
-          has_children: true
+          permalink: /devices/
+          sidebar:
+            nav: "docs"
           ---
           
           EOF
@@ -124,22 +128,22 @@ jobs:
           fi
           
           # Devices children
-          nav_order=1
           for file in _site_source/devices/*.md; do
             if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
               title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+              permalink="/devices/$(basename "$file" .md)/"
               cat > temp_file.md << EOF
           ---
-          layout: default
+          layout: single
           title: "$title"
-          parent: Devices
-          nav_order: $nav_order
+          permalink: "$permalink"
+          sidebar:
+            nav: "docs"
           ---
           
           EOF
               tail -n +1 "$file" >> temp_file.md
               mv temp_file.md "$file"
-              nav_order=$((nav_order + 1))
             fi
           done
           
@@ -147,10 +151,11 @@ jobs:
           if [ -f _site_source/settings/index.md ]; then
             cat > temp_settings.md << 'EOF'
           ---
-          layout: default
+          layout: single
           title: Settings
-          nav_order: 5
-          has_children: true
+          permalink: /settings/
+          sidebar:
+            nav: "docs"
           ---
           
           EOF
@@ -158,23 +163,23 @@ jobs:
             mv temp_settings.md _site_source/settings/index.md
           fi
           
-          # Settings children (including nested ones)
-          nav_order=1
+          # Settings children
           for file in _site_source/settings/*.md; do
             if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
               title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+              permalink="/settings/$(basename "$file" .md)/"
               cat > temp_file.md << EOF
           ---
-          layout: default
+          layout: single
           title: "$title"
-          parent: Settings
-          nav_order: $nav_order
+          permalink: "$permalink"
+          sidebar:
+            nav: "docs"
           ---
           
           EOF
               tail -n +1 "$file" >> temp_file.md
               mv temp_file.md "$file"
-              nav_order=$((nav_order + 1))
             fi
           done
           
@@ -188,37 +193,35 @@ jobs:
               if [ -f "$subdir/index.md" ]; then
                 cat > temp_subdir.md << EOF
           ---
-          layout: default
+          layout: single
           title: "$subdir_title"
-          parent: Settings
-          nav_order: $nav_order
-          has_children: true
+          permalink: "/settings/$subdir_name/"
+          sidebar:
+            nav: "docs"
           ---
           
           EOF
                 tail -n +1 "$subdir/index.md" >> temp_subdir.md
                 mv temp_subdir.md "$subdir/index.md"
-                nav_order=$((nav_order + 1))
               fi
               
               # Subdir children
-              child_nav=1
               for file in "$subdir"*.md; do
                 if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
                   title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+                  permalink="/settings/$subdir_name/$(basename "$file" .md)/"
                   cat > temp_file.md << EOF
           ---
-          layout: default
+          layout: single
           title: "$title"
-          parent: "$subdir_title"
-          grand_parent: Settings
-          nav_order: $child_nav
+          permalink: "$permalink"
+          sidebar:
+            nav: "docs"
           ---
           
           EOF
                   tail -n +1 "$file" >> temp_file.md
                   mv temp_file.md "$file"
-                  child_nav=$((child_nav + 1))
                 fi
               done
             fi
@@ -228,10 +231,11 @@ jobs:
           if [ -f _site_source/plans/index.md ]; then
             cat > temp_plans.md << 'EOF'
           ---
-          layout: default
+          layout: single
           title: Plans
-          nav_order: 6
-          has_children: true
+          permalink: /plans/
+          sidebar:
+            nav: "docs"
           ---
           
           EOF
@@ -240,22 +244,22 @@ jobs:
           fi
           
           # Plans children
-          nav_order=1
           for file in _site_source/plans/*.md; do
             if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
               title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+              permalink="/plans/$(basename "$file" .md)/"
               cat > temp_file.md << EOF
           ---
-          layout: default
+          layout: single
           title: "$title"
-          parent: Plans
-          nav_order: $nav_order
+          permalink: "$permalink"
+          sidebar:
+            nav: "docs"
           ---
           
           EOF
               tail -n +1 "$file" >> temp_file.md
               mv temp_file.md "$file"
-              nav_order=$((nav_order + 1))
             fi
           done
           
@@ -263,9 +267,11 @@ jobs:
           if [ -f _site_source/reports.md ]; then
             cat > temp_reports.md << 'EOF'
           ---
-          layout: default
+          layout: single
           title: Reports
-          nav_order: 7
+          permalink: /reports/
+          sidebar:
+            nav: "docs"
           ---
           
           EOF
@@ -276,15 +282,60 @@ jobs:
           if [ -f _site_source/resellers.md ]; then
             cat > temp_resellers.md << 'EOF'
           ---
-          layout: default
+          layout: single
           title: Resellers
-          nav_order: 8
+          permalink: /resellers/
+          sidebar:
+            nav: "docs"
           ---
           
           EOF
             tail -n +1 _site_source/resellers.md >> temp_resellers.md
             mv temp_resellers.md _site_source/resellers.md
           fi
+
+      - name: Create navigation structure
+        run: |
+          mkdir -p _site_source/_data
+          cat > _site_source/_data/navigation.yml << 'EOF'
+          docs:
+            - title: "Home"
+              url: /
+            - title: "Access"
+              url: /access/
+            - title: "Users"
+              url: /users/
+              children:
+                - title: "User Management"
+                  url: /users/user-management/
+                - title: "User Roles"
+                  url: /users/user-roles/
+            - title: "Devices"
+              url: /devices/
+              children:
+                - title: "Device Management"
+                  url: /devices/device-management/
+                - title: "Air Console"
+                  url: /devices/air-console/
+            - title: "Settings"
+              url: /settings/
+              children:
+                - title: "System Settings"
+                  url: /settings/system-settings/
+                - title: "User Settings"
+                  url: /settings/user-settings/
+            - title: "Plans"
+              url: /plans/
+              children:
+                - title: "Plan Management"
+                  url: /plans/plan-management/
+                - title: "Activation Codes"
+                  url: /plans/activation-codes/
+            - title: "Reports"
+              url: /reports/
+            - title: "Resellers"
+              url: /resellers/
+          EOF
 
       - name: Create Jekyll configuration
         run: |
@@ -294,32 +345,40 @@ jobs:
           baseurl: "/udoc"
           url: "https://amasyunin.github.io"
           
-          remote_theme: just-the-docs/just-the-docs
+          remote_theme: "mmistakes/minimal-mistakes@4.24.0"
           
-          # Just the Docs theme configuration
-          color_scheme: nil
+          # Minimal Mistakes theme configuration
+          minimal_mistakes_skin: "default"
           
           # Search enabled
-          search_enabled: true
+          search: true
+          search_full_content: true
           
-          # Navigation configuration
-          nav_sort: case_insensitive
+          # Site settings
+          locale: "en-US"
+          name: "Navixy"
           
-          # Back to top link
-          back_to_top: true
-          back_to_top_text: "Back to top"
+          # Site footer
+          footer:
+            links:
+              - label: "Navixy Website"
+                icon: "fas fa-fw fa-link"
+                url: "https://navixy.com"
           
-          # REMOVE BRANDING - Key additions:
-          # Remove default aux links (GitHub link)
-          aux_links: {}
-          
-          # Remove edit page links
-          gh_edit_link: false
-          gh_edit_link_text: ""
-          gh_edit_repository: ""
-          
-          # Custom footer (removes "Just the Docs" attribution)
-          footer_content: "© 2025 Navixy. All rights reserved."
+          # Defaults for pages
+          defaults:
+            - scope:
+                path: ""
+                type: pages
+              values:
+                layout: single
+                author_profile: false
+                read_time: false
+                comments: false
+                share: false
+                related: false
+                sidebar:
+                  nav: "docs"
           
           markdown: kramdown
           highlighter: rouge
@@ -337,38 +396,11 @@ jobs:
             - vendor/
           
           plugins:
-            - jekyll-seo-tag
-          EOF
-
-      - name: Create custom CSS to remove branding
-        run: |
-          mkdir -p _site_source/assets/css
-          cat > _site_source/assets/css/custom.css << 'EOF'
-          /* Hide the "This site uses Just the Docs" footer text */
-          .site-footer .fs-2 {
-            display: none !important;
-          }
-          
-          /* Hide any remaining theme attribution */
-          .site-footer p {
-            display: none !important;
-          }
-          
-          /* Show only our custom footer content */
-          .site-footer .footer-content {
-            display: block !important;
-          }
-          EOF
-          
-          # Create custom head include to load our CSS
-          mkdir -p _site_source/_includes
-          cat > _site_source/_includes/head_custom.html << 'EOF'
-          <link rel="stylesheet" href="{{ '/assets/css/custom.css' | relative_url }}">
-          EOF
-          
-          # Override footer template completely
-          cat > _site_source/_includes/footer_custom.html << 'EOF'
-          <p class="text-small text-grey-dk-100 mb-0">© 2025 Navixy. All rights reserved.</p>
+            - jekyll-paginate
+            - jekyll-sitemap
+            - jekyll-gist
+            - jekyll-feed
+            - jekyll-include-cache
           EOF
 
       - name: Build with Jekyll

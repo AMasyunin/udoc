@@ -40,6 +40,9 @@ jobs:
           find _site_source -name "*.md" -type f -exec sed -i 's/{% hint style="[^"]*" %}/> **Note:** /g' {} \;
           find _site_source -name "*.md" -type f -exec sed -i 's/{% endhint %}/\n/g' {} \;
           find _site_source -name "*.md" -type f -exec sed -i 's/{% hint %}/> **Note:** /g' {} \;
+          
+          # Remove the first heading from each markdown file (it will be replaced by the layout title)
+          find _site_source -name "*.md" -type f -exec sed -i '/^# /{ N; s/^# .*\n//; }' {} \;
 
       - name: Add front matter to all pages
         run: |
@@ -65,7 +68,7 @@ jobs:
           ---
           layout: default
           title: "TITLE_PLACEHOLDER"
-          hide_title: true
+          hide_title: false
           ---
           
           EOF
@@ -338,11 +341,9 @@ jobs:
                   </nav>
                   
                   <main class="content">
-                      {% if page.hide_title %}
-                      <h1 class="hidden">{{ page.title }}</h1>
-                      {% else %}
+                      {% unless page.hide_title %}
                       <h1>{{ page.title }}</h1>
-                      {% endif %}
+                      {% endunless %}
                       {{ content }}
                   </main>
               </div>

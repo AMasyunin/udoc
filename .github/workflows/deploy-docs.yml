@@ -42,9 +42,15 @@ jobs:
           find _site_source -name "*.md" -type f -exec sed -i 's/{% hint %}/> **Note:** /g' {} \;
           
           # Remove the first heading only from top-level section index files (to avoid duplication with layout title)
+          echo "Removing H1 headings from section index files..."
           for section_index in _site_source/users/index.md _site_source/devices/index.md _site_source/settings/index.md _site_source/plans/index.md; do
             if [ -f "$section_index" ]; then
-              sed -i '/^# /{ N; s/^# .*\n//; }' "$section_index"
+              echo "Processing: $section_index"
+              # Remove first H1 heading and any blank line that follows it
+              sed -i '1,/^# /{/^# /d;}' "$section_index"
+              echo "First H1 removed from: $section_index"
+            else
+              echo "File not found: $section_index"
             fi
           done
 
@@ -64,16 +70,18 @@ jobs:
             mv temp_index.md _site_source/index.md
           fi
           
-          # Add front matter to all markdown files
-          find _site_source -name "*.md" -not -name "index.md" -type f | while read file; do
+          # Add front matter to all markdown files except the root index
+          find _site_source -name "*.md" -not -path "_site_source/index.md" -type f | while read file; do
             if ! head -n 1 "$file" | grep -q "^---$"; then
               title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
               
               # Check if this is a top-level section index file
-              if [[ "$file" == *"/users/index.md" ]] || [[ "$file" == *"/devices/index.md" ]] || [[ "$file" == *"/settings/index.md" ]] || [[ "$file" == *"/plans/index.md" ]]; then
+              if [[ "$file" =~ _site_source/(users|devices|settings|plans)/index\.md$ ]]; then
                 hide_title="false"  # Show layout title for section index pages
+                echo "Section index detected: $file (hide_title: false)"
               else
                 hide_title="true"   # Hide layout title for sub-pages (they have their own H1)
+                echo "Sub-page detected: $file (hide_title: true)"
               fi
               
               cat > temp_file.md << 'EOF'

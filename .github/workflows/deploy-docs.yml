@@ -284,6 +284,8 @@ jobs:
       - name: Create sidebar navigation
         run: |
           mkdir -p _site_source/_data/sidebars
+          
+          # Create a simple, static sidebar structure to avoid YAML issues
           cat > _site_source/_data/sidebars/mydoc_sidebar.yml << 'EOF'
           entries:
           - title: sidebar
@@ -308,20 +310,18 @@ jobs:
               - title: Users Overview
                 url: /users.html
                 output: web, pdf
-          EOF
-          
-          # Add Users children dynamically with proper indentation
-          for file in _site_source/users/*.md; do
-            if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
-              title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
-              filename=$(basename "$file" .md)
-              echo "              - title: $title" >> _site_source/_data/sidebars/mydoc_sidebar.yml
-              echo "                url: /users_${filename}.html" >> _site_source/_data/sidebars/mydoc_sidebar.yml
-              echo "                output: web, pdf" >> _site_source/_data/sidebars/mydoc_sidebar.yml
-            fi
-          done
-          
-          cat >> _site_source/_data/sidebars/mydoc_sidebar.yml << 'EOF'
+              - title: Billing Operations
+                url: /users_billing-operations.html
+                output: web, pdf
+              - title: Create User
+                url: /users_create-user.html
+                output: web, pdf
+              - title: Delete User
+                url: /users_delete-user.html
+                output: web, pdf
+              - title: User Details
+                url: /users_user-details.html
+                output: web, pdf
           
             - title: Devices
               output: web, pdf
@@ -329,20 +329,21 @@ jobs:
               - title: Devices Overview
                 url: /devices.html
                 output: web, pdf
-          EOF
-          
-          # Add Devices children dynamically with proper indentation
-          for file in _site_source/devices/*.md; do
-            if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
-              title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
-              filename=$(basename "$file" .md)
-              echo "              - title: $title" >> _site_source/_data/sidebars/mydoc_sidebar.yml
-              echo "                url: /devices_${filename}.html" >> _site_source/_data/sidebars/mydoc_sidebar.yml
-              echo "                output: web, pdf" >> _site_source/_data/sidebars/mydoc_sidebar.yml
-            fi
-          done
-          
-          cat >> _site_source/_data/sidebars/mydoc_sidebar.yml << 'EOF'
+              - title: Air Console
+                url: /devices_air-console.html
+                output: web, pdf
+              - title: Basic Operations
+                url: /devices_basic-operations.html
+                output: web, pdf
+              - title: Bulk Activation
+                url: /devices_bulk-activation.html
+                output: web, pdf
+              - title: Change Plan
+                url: /devices_change-plan.html
+                output: web, pdf
+              - title: Tracker Clones
+                url: /devices_tracker-clones.html
+                output: web, pdf
           
             - title: Settings
               output: web, pdf
@@ -350,42 +351,30 @@ jobs:
               - title: Settings Overview
                 url: /settings.html
                 output: web, pdf
-          EOF
-          
-          # Add Settings children dynamically with proper indentation
-          for file in _site_source/settings/*.md; do
-            if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
-              title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
-              filename=$(basename "$file" .md)
-              echo "              - title: $title" >> _site_source/_data/sidebars/mydoc_sidebar.yml
-              echo "                url: /settings_${filename}.html" >> _site_source/_data/sidebars/mydoc_sidebar.yml
-              echo "                output: web, pdf" >> _site_source/_data/sidebars/mydoc_sidebar.yml
-            fi
-          done
-          
-          # Add Settings subdirectories with proper indentation
-          for subdir in _site_source/settings/*/; do
-            if [ -d "$subdir" ]; then
-              subdir_name=$(basename "$subdir")
-              subdir_title=$(echo "$subdir_name" | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
-              echo "              - title: $subdir_title" >> _site_source/_data/sidebars/mydoc_sidebar.yml
-              echo "                url: /settings_${subdir_name}.html" >> _site_source/_data/sidebars/mydoc_sidebar.yml
-              echo "                output: web, pdf" >> _site_source/_data/sidebars/mydoc_sidebar.yml
-              
-              # Add subdir children with proper indentation
-              for file in "$subdir"*.md; do
-                if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
-                  title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
-                  filename=$(basename "$file" .md)
-                  echo "              - title: $title" >> _site_source/_data/sidebars/mydoc_sidebar.yml
-                  echo "                url: /settings_${subdir_name}_${filename}.html" >> _site_source/_data/sidebars/mydoc_sidebar.yml
-                  echo "                output: web, pdf" >> _site_source/_data/sidebars/mydoc_sidebar.yml
-                fi
-              done
-            fi
-          done
-          
-          cat >> _site_source/_data/sidebars/mydoc_sidebar.yml << 'EOF'
+              - title: Branding Options
+                url: /settings_branding-options.html
+                output: web, pdf
+              - title: Custom Menu Editor
+                url: /settings_custom-menu-editor.html
+                output: web, pdf
+              - title: Domain Name
+                url: /settings_domain-name.html
+                output: web, pdf
+              - title: Payment Gateway
+                url: /settings_payment-gateway.html
+                output: web, pdf
+              - title: Two Factor Authentication
+                url: /settings_two-factor-authentication.html
+                output: web, pdf
+              - title: Maps
+                url: /settings_maps.html
+                output: web, pdf
+              - title: Messaging Gateways
+                url: /settings_messaging-gateways.html
+                output: web, pdf
+              - title: Service Preferences
+                url: /settings_service-preferences.html
+                output: web, pdf
           
             - title: Plans
               output: web, pdf
@@ -393,20 +382,18 @@ jobs:
               - title: Plans Overview
                 url: /plans.html
                 output: web, pdf
-          EOF
-          
-          # Add Plans children dynamically with proper indentation
-          for file in _site_source/plans/*.md; do
-            if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
-              title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
-              filename=$(basename "$file" .md)
-              echo "              - title: $title" >> _site_source/_data/sidebars/mydoc_sidebar.yml
-              echo "                url: /plans_${filename}.html" >> _site_source/_data/sidebars/mydoc_sidebar.yml
-              echo "                output: web, pdf" >> _site_source/_data/sidebars/mydoc_sidebar.yml
-            fi
-          done
-          
-          cat >> _site_source/_data/sidebars/mydoc_sidebar.yml << 'EOF'
+              - title: Activation Codes
+                url: /plans_activation-codes.html
+                output: web, pdf
+              - title: Assets Are Not Displayed In The Account
+                url: /plans_assets-are-not-displayed-in-the-account.html
+                output: web, pdf
+              - title: Pricing Plans Conflicts
+                url: /plans_pricing-plans-conflicts.html
+                output: web, pdf
+              - title: Suspending Service For A Device
+                url: /plans_suspending-service-for-a-device.html
+                output: web, pdf
           
             - title: Other
               output: web, pdf

@@ -41,8 +41,12 @@ jobs:
           find _site_source -name "*.md" -type f -exec sed -i 's/{% endhint %}/\n/g' {} \;
           find _site_source -name "*.md" -type f -exec sed -i 's/{% hint %}/> **Note:** /g' {} \;
           
-          # Remove the first heading from each markdown file (it will be replaced by the layout title)
-          find _site_source -name "*.md" -type f -exec sed -i '/^# /{ N; s/^# .*\n//; }' {} \;
+          # Remove the first heading only from top-level section index files (to avoid duplication with layout title)
+          for section_index in _site_source/users/index.md _site_source/devices/index.md _site_source/settings/index.md _site_source/plans/index.md; do
+            if [ -f "$section_index" ]; then
+              sed -i '/^# /{ N; s/^# .*\n//; }' "$section_index"
+            fi
+          done
 
       - name: Add front matter to all pages
         run: |
@@ -60,20 +64,28 @@ jobs:
             mv temp_index.md _site_source/index.md
           fi
           
-          # Add front matter to all other markdown files
+          # Add front matter to all markdown files
           find _site_source -name "*.md" -not -name "index.md" -type f | while read file; do
             if ! head -n 1 "$file" | grep -q "^---$"; then
               title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+              
+              # Check if this is a top-level section index file
+              if [[ "$file" == *"/users/index.md" ]] || [[ "$file" == *"/devices/index.md" ]] || [[ "$file" == *"/settings/index.md" ]] || [[ "$file" == *"/plans/index.md" ]]; then
+                hide_title="false"
+              else
+                hide_title="true"
+              fi
+              
               cat > temp_file.md << 'EOF'
           ---
           layout: default
           title: "TITLE_PLACEHOLDER"
-          hide_title: false
+          hide_title: HIDE_TITLE_PLACEHOLDER
           ---
           
           EOF
-              # Replace placeholder with actual title
-              sed "s/TITLE_PLACEHOLDER/$title/g" temp_file.md > temp_file2.md
+              # Replace placeholders with actual values
+              sed "s/TITLE_PLACEHOLDER/$title/g" temp_file.md | sed "s/HIDE_TITLE_PLACEHOLDER/$hide_title/g" > temp_file2.md
               cat "$file" >> temp_file2.md
               mv temp_file2.md "$file"
               rm -f temp_file.md

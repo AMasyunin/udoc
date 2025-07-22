@@ -340,6 +340,29 @@ jobs:
             - jekyll-seo-tag
           EOF
 
+      - name: Create custom CSS to remove branding
+        run: |
+          mkdir -p _site_source/assets/css
+          cat > _site_source/assets/css/just-the-docs-default.scss << 'EOF'
+          ---
+          ---
+          
+          @import "{{ site.theme }}";
+          
+          // Hide the "This site uses Just the Docs" footer text
+          .site-footer .fs-2 {
+            display: none !important;
+          }
+          
+          // Hide any remaining theme attribution
+          .site-footer p:contains("Just the Docs") {
+            display: none !important;
+          }
+          
+          // If the entire footer becomes empty, you can hide it completely
+          // .site-footer { display: none !important; }
+          EOF
+
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1
         with:

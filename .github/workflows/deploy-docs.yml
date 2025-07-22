@@ -310,16 +310,14 @@ jobs:
                 output: web, pdf
           EOF
           
-          # Add Users children dynamically
+          # Add Users children dynamically with proper indentation
           for file in _site_source/users/*.md; do
             if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
               title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
               filename=$(basename "$file" .md)
-              cat >> _site_source/_data/sidebars/mydoc_sidebar.yml << EOF
-              - title: $title
-                url: /users_${filename}.html
-                output: web, pdf
-          EOF
+              echo "              - title: $title" >> _site_source/_data/sidebars/mydoc_sidebar.yml
+              echo "                url: /users_${filename}.html" >> _site_source/_data/sidebars/mydoc_sidebar.yml
+              echo "                output: web, pdf" >> _site_source/_data/sidebars/mydoc_sidebar.yml
             fi
           done
           
@@ -333,16 +331,14 @@ jobs:
                 output: web, pdf
           EOF
           
-          # Add Devices children dynamically
+          # Add Devices children dynamically with proper indentation
           for file in _site_source/devices/*.md; do
             if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
               title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
               filename=$(basename "$file" .md)
-              cat >> _site_source/_data/sidebars/mydoc_sidebar.yml << EOF
-              - title: $title
-                url: /devices_${filename}.html
-                output: web, pdf
-          EOF
+              echo "              - title: $title" >> _site_source/_data/sidebars/mydoc_sidebar.yml
+              echo "                url: /devices_${filename}.html" >> _site_source/_data/sidebars/mydoc_sidebar.yml
+              echo "                output: web, pdf" >> _site_source/_data/sidebars/mydoc_sidebar.yml
             fi
           done
           
@@ -356,40 +352,34 @@ jobs:
                 output: web, pdf
           EOF
           
-          # Add Settings children dynamically
+          # Add Settings children dynamically with proper indentation
           for file in _site_source/settings/*.md; do
             if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
               title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
               filename=$(basename "$file" .md)
-              cat >> _site_source/_data/sidebars/mydoc_sidebar.yml << EOF
-              - title: $title
-                url: /settings_${filename}.html
-                output: web, pdf
-          EOF
+              echo "              - title: $title" >> _site_source/_data/sidebars/mydoc_sidebar.yml
+              echo "                url: /settings_${filename}.html" >> _site_source/_data/sidebars/mydoc_sidebar.yml
+              echo "                output: web, pdf" >> _site_source/_data/sidebars/mydoc_sidebar.yml
             fi
           done
           
-          # Add Settings subdirectories
+          # Add Settings subdirectories with proper indentation
           for subdir in _site_source/settings/*/; do
             if [ -d "$subdir" ]; then
               subdir_name=$(basename "$subdir")
               subdir_title=$(echo "$subdir_name" | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
-              cat >> _site_source/_data/sidebars/mydoc_sidebar.yml << EOF
-              - title: $subdir_title
-                url: /settings_${subdir_name}.html
-                output: web, pdf
-          EOF
+              echo "              - title: $subdir_title" >> _site_source/_data/sidebars/mydoc_sidebar.yml
+              echo "                url: /settings_${subdir_name}.html" >> _site_source/_data/sidebars/mydoc_sidebar.yml
+              echo "                output: web, pdf" >> _site_source/_data/sidebars/mydoc_sidebar.yml
               
-              # Add subdir children
+              # Add subdir children with proper indentation
               for file in "$subdir"*.md; do
                 if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
                   title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
                   filename=$(basename "$file" .md)
-                  cat >> _site_source/_data/sidebars/mydoc_sidebar.yml << EOF
-                - title: $title
-                  url: /settings_${subdir_name}_${filename}.html
-                  output: web, pdf
-          EOF
+                  echo "              - title: $title" >> _site_source/_data/sidebars/mydoc_sidebar.yml
+                  echo "                url: /settings_${subdir_name}_${filename}.html" >> _site_source/_data/sidebars/mydoc_sidebar.yml
+                  echo "                output: web, pdf" >> _site_source/_data/sidebars/mydoc_sidebar.yml
                 fi
               done
             fi
@@ -405,16 +395,14 @@ jobs:
                 output: web, pdf
           EOF
           
-          # Add Plans children dynamically
+          # Add Plans children dynamically with proper indentation
           for file in _site_source/plans/*.md; do
             if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
               title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
               filename=$(basename "$file" .md)
-              cat >> _site_source/_data/sidebars/mydoc_sidebar.yml << EOF
-              - title: $title
-                url: /plans_${filename}.html
-                output: web, pdf
-          EOF
+              echo "              - title: $title" >> _site_source/_data/sidebars/mydoc_sidebar.yml
+              echo "                url: /plans_${filename}.html" >> _site_source/_data/sidebars/mydoc_sidebar.yml
+              echo "                output: web, pdf" >> _site_source/_data/sidebars/mydoc_sidebar.yml
             fi
           done
           

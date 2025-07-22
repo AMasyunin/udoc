@@ -43,12 +43,13 @@ jobs:
 
       - name: Add front matter to all pages
         run: |
-          # Root index page
+          # Root index page - special handling
           if [ -f _site_source/index.md ]; then
             cat > temp_index.md << 'EOF'
           ---
           layout: default
-          title: "Admin Panel Documentation"
+          title: "Admin Panel"
+          hide_title: false
           ---
           
           EOF
@@ -64,6 +65,7 @@ jobs:
           ---
           layout: default
           title: "TITLE_PLACEHOLDER"
+          hide_title: true
           ---
           
           EOF
@@ -133,10 +135,13 @@ jobs:
                       cursor: pointer;
                       background: #f6f8fa;
                       border-left: 3px solid transparent;
+                      text-decoration: none;
+                      display: block;
                   }
                   
                   .nav-section-title:hover {
                       background: #e1e4e8;
+                      color: #586069;
                   }
                   
                   .nav-section-title.active {
@@ -189,6 +194,10 @@ jobs:
                       color: #24292e;
                       border-bottom: 1px solid #e1e4e8;
                       padding-bottom: 10px;
+                  }
+                  
+                  .content h1.hidden {
+                      display: none;
                   }
                   
                   .content h2 {
@@ -265,20 +274,18 @@ jobs:
           <body>
               <div class="container">
                   <nav class="sidebar">
-                      <h3>Admin Panel Documentation</h3>
+                      <h3>Admin Panel</h3>
                       
                       <div class="nav-section">
-                          <div class="nav-section-title" onclick="toggleSection('getting-started')">Getting Started</div>
+                          <a href="{{ '/index.html' | relative_url }}" class="nav-section-title" data-section="getting-started">Getting Started</a>
                           <div class="nav-items" id="getting-started">
-                              <a href="{{ '/index.html' | relative_url }}">Home</a>
                               <a href="{{ '/access.html' | relative_url }}">Access</a>
                           </div>
                       </div>
                       
                       <div class="nav-section">
-                          <div class="nav-section-title" onclick="toggleSection('users')">Users</div>
+                          <a href="{{ '/users/index.html' | relative_url }}" class="nav-section-title" data-section="users">Users</a>
                           <div class="nav-items" id="users">
-                              <a href="{{ '/users/index.html' | relative_url }}">Users Overview</a>
                               <a href="{{ '/users/billing-operations.html' | relative_url }}">Billing Operations</a>
                               <a href="{{ '/users/create-user.html' | relative_url }}">Create User</a>
                               <a href="{{ '/users/delete-user.html' | relative_url }}">Delete User</a>
@@ -287,9 +294,8 @@ jobs:
                       </div>
                       
                       <div class="nav-section">
-                          <div class="nav-section-title" onclick="toggleSection('devices')">Devices</div>
+                          <a href="{{ '/devices/index.html' | relative_url }}" class="nav-section-title" data-section="devices">Devices</a>
                           <div class="nav-items" id="devices">
-                              <a href="{{ '/devices/index.html' | relative_url }}">Devices Overview</a>
                               <a href="{{ '/devices/air-console.html' | relative_url }}">Air Console</a>
                               <a href="{{ '/devices/basic-operations.html' | relative_url }}">Basic Operations</a>
                               <a href="{{ '/devices/bulk-activation.html' | relative_url }}">Bulk Activation</a>
@@ -299,9 +305,8 @@ jobs:
                       </div>
                       
                       <div class="nav-section">
-                          <div class="nav-section-title" onclick="toggleSection('settings')">Settings</div>
+                          <a href="{{ '/settings/index.html' | relative_url }}" class="nav-section-title" data-section="settings">Settings</a>
                           <div class="nav-items" id="settings">
-                              <a href="{{ '/settings/index.html' | relative_url }}">Settings Overview</a>
                               <a href="{{ '/settings/branding-options.html' | relative_url }}">Branding Options</a>
                               <a href="{{ '/settings/custom-menu-editor.html' | relative_url }}">Custom Menu Editor</a>
                               <a href="{{ '/settings/domain-name.html' | relative_url }}">Domain Name</a>
@@ -314,9 +319,8 @@ jobs:
                       </div>
                       
                       <div class="nav-section">
-                          <div class="nav-section-title" onclick="toggleSection('plans')">Plans</div>
+                          <a href="{{ '/plans/index.html' | relative_url }}" class="nav-section-title" data-section="plans">Plans</a>
                           <div class="nav-items" id="plans">
-                              <a href="{{ '/plans/index.html' | relative_url }}">Plans Overview</a>
                               <a href="{{ '/plans/activation-codes.html' | relative_url }}">Activation Codes</a>
                               <a href="{{ '/plans/assets-are-not-displayed-in-the-account.html' | relative_url }}">Assets Are Not Displayed</a>
                               <a href="{{ '/plans/pricing-plans-conflicts.html' | relative_url }}">Pricing Plans Conflicts</a>
@@ -325,7 +329,7 @@ jobs:
                       </div>
                       
                       <div class="nav-section">
-                          <div class="nav-section-title" onclick="toggleSection('other')">Other</div>
+                          <div class="nav-section-title" data-section="other">Other</div>
                           <div class="nav-items" id="other">
                               <a href="{{ '/reports.html' | relative_url }}">Reports</a>
                               <a href="{{ '/resellers.html' | relative_url }}">Resellers</a>
@@ -334,32 +338,35 @@ jobs:
                   </nav>
                   
                   <main class="content">
+                      {% if page.hide_title %}
+                      <h1 class="hidden">{{ page.title }}</h1>
+                      {% else %}
                       <h1>{{ page.title }}</h1>
+                      {% endif %}
                       {{ content }}
                   </main>
               </div>
               
               <script>
-                  function toggleSection(sectionId) {
-                      const section = document.getElementById(sectionId);
-                      const title = section.previousElementSibling;
+                  document.addEventListener('DOMContentLoaded', function() {
+                      const sectionTitles = document.querySelectorAll('.nav-section-title');
+                      const currentPath = window.location.pathname;
                       
-                      // Close all other sections
-                      document.querySelectorAll('.nav-items').forEach(item => {
-                          if (item.id !== sectionId) {
-                              item.classList.remove('show');
-                              item.previousElementSibling.classList.remove('active');
+                      // Handle section title clicks
+                      sectionTitles.forEach(title => {
+                          const sectionId = title.getAttribute('data-section');
+                          const section = document.getElementById(sectionId);
+                          
+                          if (section && !title.href) {
+                              // Only add click handler if it's not a link (like "Other")
+                              title.addEventListener('click', function(e) {
+                                  e.preventDefault();
+                                  toggleSection(sectionId);
+                              });
                           }
                       });
                       
-                      // Toggle current section
-                      section.classList.toggle('show');
-                      title.classList.toggle('active');
-                  }
-                  
-                  // Auto-open section based on current page
-                  document.addEventListener('DOMContentLoaded', function() {
-                      const currentPath = window.location.pathname;
+                      // Auto-open section and highlight current page
                       let sectionToOpen = null;
                       
                       if (currentPath.includes('/users/')) sectionToOpen = 'users';
@@ -370,16 +377,49 @@ jobs:
                       else sectionToOpen = 'getting-started';
                       
                       if (sectionToOpen) {
-                          toggleSection(sectionToOpen);
+                          openSection(sectionToOpen);
                           
                           // Highlight current page
-                          document.querySelectorAll('.nav-items a').forEach(link => {
-                              if (link.getAttribute('href').includes(currentPath.split('/').pop())) {
+                          document.querySelectorAll('.nav-items a, .nav-section-title').forEach(link => {
+                              const linkPath = link.getAttribute('href');
+                              if (linkPath && (currentPath.endsWith(linkPath) || linkPath.endsWith(currentPath.split('/').pop()))) {
                                   link.classList.add('active');
                               }
                           });
                       }
                   });
+                  
+                  function toggleSection(sectionId) {
+                      const section = document.getElementById(sectionId);
+                      const title = document.querySelector(`[data-section="${sectionId}"]`);
+                      
+                      if (section.classList.contains('show')) {
+                          section.classList.remove('show');
+                          title.classList.remove('active');
+                      } else {
+                          // Close other sections
+                          document.querySelectorAll('.nav-items').forEach(item => {
+                              item.classList.remove('show');
+                          });
+                          document.querySelectorAll('.nav-section-title').forEach(item => {
+                              item.classList.remove('active');
+                          });
+                          
+                          // Open current section
+                          section.classList.add('show');
+                          title.classList.add('active');
+                      }
+                  }
+                  
+                  function openSection(sectionId) {
+                      const section = document.getElementById(sectionId);
+                      const title = document.querySelector(`[data-section="${sectionId}"]`);
+                      
+                      if (section && title) {
+                          section.classList.add('show');
+                          title.classList.add('active');
+                      }
+                  }
               </script>
           </body>
           </html>

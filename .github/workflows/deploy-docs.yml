@@ -29,11 +29,11 @@ jobs:
           # Copy admin-panel content
           cp -r docs/admin-panel/* _site_source/
           
-          # Rename all README.md files to _index.md (Docsy convention)
+          # Rename all README.md files to index.md (keep standard Jekyll convention)
           find _site_source -name "README.md" -exec sh -c '
             dir=$(dirname "$1")
-            mv "$1" "$dir/_index.md"
-            echo "Renamed $1 to $dir/_index.md"
+            mv "$1" "$dir/index.md"
+            echo "Renamed $1 to $dir/index.md"
           ' _ {} \;
           
           # Fix GitBook syntax
@@ -315,29 +315,14 @@ jobs:
           author: "Navixy"
           email: "support@navixy.com"
           
-          # Repository settings (optional)
-          github_repo: "https://github.com/AMasyunin/udoc"
-          github_branch: "userdocs"
-          
           # Search settings
           search_enabled: true
-          
-          # Navigation
-          collections:
-            docs:
-              output: true
-              permalink: /:collection/:name/
           
           # Defaults
           defaults:
             - scope:
                 path: ""
                 type: "pages"
-              values:
-                layout: "page"
-            - scope:
-                path: ""
-                type: "docs"
               values:
                 layout: "page"
           
@@ -364,12 +349,6 @@ jobs:
             - node_modules/
             - vendor/
             - README.md
-          
-          # Footer settings (remove branding)
-          footer_content: "© 2025 Navixy. All rights reserved."
-          
-          # Disable GitHub edit links
-          edit_page: false
           EOF
 
       - name: Create custom styling to remove branding

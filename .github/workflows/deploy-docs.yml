@@ -40,24 +40,15 @@ jobs:
           find _site_source -name "*.md" -type f -exec sed -i 's/{% hint style="[^"]*" %}/> **Note:** /g' {} \;
           find _site_source -name "*.md" -type f -exec sed -i 's/{% endhint %}/\n/g' {} \;
           find _site_source -name "*.md" -type f -exec sed -i 's/{% hint %}/> **Note:** /g' {} \;
-          
-          # Remove the first heading from files to avoid duplication with layout title
-          echo "Removing H1 headings from files..."
-          find _site_source -name "*.md" -not -path "_site_source/index.md" -type f | while read file; do
-            echo "Removing H1 from: $file"
-            # Remove first H1 heading from all files (layout will provide the title)
-            sed -i '1,/^# /{/^# /d;}' "$file"
-          done
 
       - name: Add front matter to all pages
         run: |
-          # Root index page - special handling
+          # Root index page
           if [ -f _site_source/index.md ]; then
             cat > temp_index.md << 'EOF'
           ---
           layout: default
           title: "Admin Panel"
-          hide_title: false
           ---
           
           EOF
@@ -65,33 +56,27 @@ jobs:
             mv temp_index.md _site_source/index.md
           fi
           
-          # Add front matter to all markdown files except the root index
+          # Add front matter to all other markdown files
           find _site_source -name "*.md" -not -path "_site_source/index.md" -type f | while read file; do
             if ! head -n 1 "$file" | grep -q "^---$"; then
-              # Check if this is a top-level section index file
+              # Determine title based on file type
               if [[ "$file" =~ _site_source/(users|devices|settings|plans)/index\.md$ ]]; then
-                # For section index files, use the directory name as title
+                # Section index files: use directory name
                 dir_name=$(basename $(dirname "$file"))
-                title=$(echo "$dir_name" | sed 's/\b\w/\U&/g')  # Capitalize first letter
-                hide_title="false"  # Show layout title for section index pages
-                echo "Section index detected: $file (title: $title, hide_title: false)"
+                title=$(echo "$dir_name" | sed 's/\b\w/\U&/g')
               else
-                # For sub-pages, use filename as title  
+                # Sub-pages: use filename
                 title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
-                hide_title="false"   # Show layout title for sub-pages too (since we removed their H1)
-                echo "Sub-page detected: $file (title: $title, hide_title: false)"
               fi
               
               cat > temp_file.md << 'EOF'
           ---
           layout: default
           title: "TITLE_PLACEHOLDER"
-          hide_title: HIDE_TITLE_PLACEHOLDER
           ---
           
           EOF
-              # Replace placeholders with actual values
-              sed "s/TITLE_PLACEHOLDER/$title/g" temp_file.md | sed "s/HIDE_TITLE_PLACEHOLDER/$hide_title/g" > temp_file2.md
+              sed "s/TITLE_PLACEHOLDER/$title/g" temp_file.md > temp_file2.md
               cat "$file" >> temp_file2.md
               mv temp_file2.md "$file"
               rm -f temp_file.md
@@ -215,10 +200,6 @@ jobs:
                       color: #24292e;
                       border-bottom: 1px solid #e1e4e8;
                       padding-bottom: 10px;
-                  }
-                  
-                  .content h1.hidden {
-                      display: none;
                   }
                   
                   .content h2 {
@@ -359,9 +340,6 @@ jobs:
                   </nav>
                   
                   <main class="content">
-                      {% if page.hide_title != true %}
-                      <h1>{{ page.title }}</h1>
-                      {% endif %}
                       {{ content }}
                   </main>
               </div>

@@ -41,17 +41,12 @@ jobs:
           find _site_source -name "*.md" -type f -exec sed -i 's/{% endhint %}/\n/g' {} \;
           find _site_source -name "*.md" -type f -exec sed -i 's/{% hint %}/> **Note:** /g' {} \;
           
-          # Remove the first heading only from top-level section index files (to avoid duplication with layout title)
-          echo "Removing H1 headings from section index files..."
-          for section_index in _site_source/users/index.md _site_source/devices/index.md _site_source/settings/index.md _site_source/plans/index.md; do
-            if [ -f "$section_index" ]; then
-              echo "Processing: $section_index"
-              # Remove first H1 heading and any blank line that follows it
-              sed -i '1,/^# /{/^# /d;}' "$section_index"
-              echo "First H1 removed from: $section_index"
-            else
-              echo "File not found: $section_index"
-            fi
+          # Remove the first heading from files to avoid duplication with layout title
+          echo "Removing H1 headings from files..."
+          find _site_source -name "*.md" -not -path "_site_source/index.md" -type f | while read file; do
+            echo "Removing H1 from: $file"
+            # Remove first H1 heading from all files (layout will provide the title)
+            sed -i '1,/^# /{/^# /d;}' "$file"
           done
 
       - name: Add front matter to all pages
@@ -73,15 +68,18 @@ jobs:
           # Add front matter to all markdown files except the root index
           find _site_source -name "*.md" -not -path "_site_source/index.md" -type f | while read file; do
             if ! head -n 1 "$file" | grep -q "^---$"; then
-              title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
-              
               # Check if this is a top-level section index file
               if [[ "$file" =~ _site_source/(users|devices|settings|plans)/index\.md$ ]]; then
+                # For section index files, use the directory name as title
+                dir_name=$(basename $(dirname "$file"))
+                title=$(echo "$dir_name" | sed 's/\b\w/\U&/g')  # Capitalize first letter
                 hide_title="false"  # Show layout title for section index pages
-                echo "Section index detected: $file (hide_title: false)"
+                echo "Section index detected: $file (title: $title, hide_title: false)"
               else
-                hide_title="true"   # Hide layout title for sub-pages (they have their own H1)
-                echo "Sub-page detected: $file (hide_title: true)"
+                # For sub-pages, use filename as title  
+                title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+                hide_title="false"   # Show layout title for sub-pages too (since we removed their H1)
+                echo "Sub-page detected: $file (title: $title, hide_title: false)"
               fi
               
               cat > temp_file.md << 'EOF'

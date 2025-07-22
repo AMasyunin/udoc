@@ -1,349 +1,59 @@
-name: Deploy Admin Panel Docs
-
-on:
-  push:
-    branches: [ main, master, userdocs ]
-    paths: [ 'docs/admin-panel/**' ]
-  workflow_dispatch:
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Prepare content for Just the Docs
-        run: |
-          # Create site directory
-          mkdir -p _site_source
-          
-          # Copy admin-panel content
-          cp -r docs/admin-panel/* _site_source/
-          
-          # Rename all README.md files to index.md
-          find _site_source -name "README.md" -exec sh -c '
-            dir=$(dirname "$1")
-            mv "$1" "$dir/index.md"
-            echo "Renamed $1 to $dir/index.md"
-          ' _ {} \;
-          
-          # Fix GitBook syntax
-          find _site_source -name "*.md" -type f -exec sed -i 's/{% hint style="[^"]*" %}/> **Note:** /g' {} \;
-          find _site_source -name "*.md" -type f -exec sed -i 's/{% endhint %}/\n/g' {} \;
-          find _site_source -name "*.md" -type f -exec sed -i 's/{% hint %}/> **Note:** /g' {} \;
-
-      - name: Add Just the Docs front matter
-        run: |
-          # Root index page
-          if [ -f _site_source/index.md ]; then
-            cat > temp_index.md << 'EOF'
-          ---
-          layout: default
-          title: Home
-          nav_order: 1
-          description: "Navixy Admin Panel Documentation"
-          permalink: /
-          ---
-          
-          EOF
-            tail -n +1 _site_source/index.md >> temp_index.md
-            mv temp_index.md _site_source/index.md
-          fi
-          
-          # Access page
-          if [ -f _site_source/access.md ]; then
-            cat > temp_access.md << 'EOF'
-          ---
-          layout: default
-          title: Access
-          nav_order: 2
-          ---
-          
-          EOF
-            tail -n +1 _site_source/access.md >> temp_access.md
-            mv temp_access.md _site_source/access.md
-          fi
-          
-          # Users section
-          if [ -f _site_source/users/index.md ]; then
-            cat > temp_users.md << 'EOF'
-          ---
-          layout: default
-          title: Users
-          nav_order: 3
-          has_children: true
-          ---
-          
-          EOF
-            tail -n +1 _site_source/users/index.md >> temp_users.md
-            mv temp_users.md _site_source/users/index.md
-          fi
-          
-          # Users children
-          nav_order=1
-          for file in _site_source/users/*.md; do
-            if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
-              title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
-              cat > temp_file.md << EOF
-          ---
-          layout: default
-          title: "$title"
-          parent: Users
-          nav_order: $nav_order
-          ---
-          
-          EOF
-              tail -n +1 "$file" >> temp_file.md
-              mv temp_file.md "$file"
-              nav_order=$((nav_order + 1))
-            fi
-          done
-          
-          # Devices section
-          if [ -f _site_source/devices/index.md ]; then
-            cat > temp_devices.md << 'EOF'
-          ---
-          layout: default
-          title: Devices
-          nav_order: 4
-          has_children: true
-          ---
-          
-          EOF
-            tail -n +1 _site_source/devices/index.md >> temp_devices.md
-            mv temp_devices.md _site_source/devices/index.md
-          fi
-          
-          # Devices children
-          nav_order=1
-          for file in _site_source/devices/*.md; do
-            if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
-              title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
-              cat > temp_file.md << EOF
-          ---
-          layout: default
-          title: "$title"
-          parent: Devices
-          nav_order: $nav_order
-          ---
-          
-          EOF
-              tail -n +1 "$file" >> temp_file.md
-              mv temp_file.md "$file"
-              nav_order=$((nav_order + 1))
-            fi
-          done
-          
-          # Settings section
-          if [ -f _site_source/settings/index.md ]; then
-            cat > temp_settings.md << 'EOF'
-          ---
-          layout: default
-          title: Settings
-          nav_order: 5
-          has_children: true
-          ---
-          
-          EOF
-            tail -n +1 _site_source/settings/index.md >> temp_settings.md
-            mv temp_settings.md _site_source/settings/index.md
-          fi
-          
-          # Settings children (including nested ones)
-          nav_order=1
-          for file in _site_source/settings/*.md; do
-            if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
-              title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
-              cat > temp_file.md << EOF
-          ---
-          layout: default
-          title: "$title"
-          parent: Settings
-          nav_order: $nav_order
-          ---
-          
-          EOF
-              tail -n +1 "$file" >> temp_file.md
-              mv temp_file.md "$file"
-              nav_order=$((nav_order + 1))
-            fi
-          done
-          
-          # Settings subdirectories
-          for subdir in _site_source/settings/*/; do
-            if [ -d "$subdir" ]; then
-              subdir_name=$(basename "$subdir")
-              subdir_title=$(echo "$subdir_name" | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
-              
-              # Subdir index
-              if [ -f "$subdir/index.md" ]; then
-                cat > temp_subdir.md << EOF
-          ---
-          layout: default
-          title: "$subdir_title"
-          parent: Settings
-          nav_order: $nav_order
-          has_children: true
-          ---
-          
-          EOF
-                tail -n +1 "$subdir/index.md" >> temp_subdir.md
-                mv temp_subdir.md "$subdir/index.md"
-                nav_order=$((nav_order + 1))
-              fi
-              
-              # Subdir children
-              child_nav=1
-              for file in "$subdir"*.md; do
-                if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
-                  title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
-                  cat > temp_file.md << EOF
-          ---
-          layout: default
-          title: "$title"
-          parent: "$subdir_title"
-          grand_parent: Settings
-          nav_order: $child_nav
-          ---
-          
-          EOF
-                  tail -n +1 "$file" >> temp_file.md
-                  mv temp_file.md "$file"
-                  child_nav=$((child_nav + 1))
-                fi
-              done
-            fi
-          done
-          
-          # Plans section
-          if [ -f _site_source/plans/index.md ]; then
-            cat > temp_plans.md << 'EOF'
-          ---
-          layout: default
-          title: Plans
-          nav_order: 6
-          has_children: true
-          ---
-          
-          EOF
-            tail -n +1 _site_source/plans/index.md >> temp_plans.md
-            mv temp_plans.md _site_source/plans/index.md
-          fi
-          
-          # Plans children
-          nav_order=1
-          for file in _site_source/plans/*.md; do
-            if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
-              title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
-              cat > temp_file.md << EOF
-          ---
-          layout: default
-          title: "$title"
-          parent: Plans
-          nav_order: $nav_order
-          ---
-          
-          EOF
-              tail -n +1 "$file" >> temp_file.md
-              mv temp_file.md "$file"
-              nav_order=$((nav_order + 1))
-            fi
-          done
-          
-          # Reports and Resellers
-          if [ -f _site_source/reports.md ]; then
-            cat > temp_reports.md << 'EOF'
-          ---
-          layout: default
-          title: Reports
-          nav_order: 7
-          ---
-          
-          EOF
-            tail -n +1 _site_source/reports.md >> temp_reports.md
-            mv temp_reports.md _site_source/reports.md
-          fi
-          
-          if [ -f _site_source/resellers.md ]; then
-            cat > temp_resellers.md << 'EOF'
-          ---
-          layout: default
-          title: Resellers
-          nav_order: 8
-          ---
-          
-          EOF
-            tail -n +1 _site_source/resellers.md >> temp_resellers.md
-            mv temp_resellers.md _site_source/resellers.md
-          fi
-
-      - name: Create Jekyll configuration
-        run: |
-          cat > _site_source/_config.yml << 'EOF'
-          title: "Admin Panel Documentation"
-          description: "Navixy Admin Panel Administration Guide"
-          baseurl: "/udoc"
-          url: "https://amasyunin.github.io"
-          
-          remote_theme: just-the-docs/just-the-docs
-          
-          # Just the Docs theme configuration
-          color_scheme: nil
-          
-          # Search enabled
-          search_enabled: true
-          
-          # Navigation configuration
-          nav_sort: case_insensitive
-          
-          # Back to top link
-          back_to_top: true
-          back_to_top_text: "Back to top"
-          
-          markdown: kramdown
-          highlighter: rouge
-          
-          kramdown:
-            syntax_highlighter_opts:
-              block:
-                line_numbers: false
-          
-          exclude:
-            - SUMMARY.md
-            - Gemfile
-            - Gemfile.lock
-            - node_modules/
-            - vendor/
-          
-          plugins:
-            - jekyll-seo-tag
-          EOF
-
-      - name: Build with Jekyll
-        uses: actions/jekyll-build-pages@v1
-        with:
-          source: ./_site_source
-          destination: ./_site
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build-and-deploy
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+- name: Create Jekyll configuration
+  run: |
+    cat > _site_source/_config.yml << 'EOF'
+    title: "Admin Panel Documentation"
+    description: "Navixy Admin Panel Administration Guide"
+    baseurl: "/udoc"
+    url: "https://amasyunin.github.io"
+    
+    remote_theme: just-the-docs/just-the-docs
+    
+    # Just the Docs theme configuration
+    color_scheme: nil
+    
+    # Search enabled
+    search_enabled: true
+    
+    # Navigation configuration
+    nav_sort: case_insensitive
+    
+    # Back to top link
+    back_to_top: true
+    back_to_top_text: "Back to top"
+    
+    # REMOVE BRANDING - Key additions:
+    # Remove default aux links (GitHub link)
+    aux_links: {}
+    
+    # Remove edit page links
+    gh_edit_link: false
+    gh_edit_link_text: ""
+    gh_edit_repository: ""
+    
+    # Custom footer (removes "Just the Docs" attribution)
+    footer_content: "© 2025 Navixy. All rights reserved."
+    
+    # Optional: Add your own navigation links
+    # nav_external_links:
+    #   - title: "Navixy Website"
+    #     url: "https://navixy.com"
+    #     hide_icon: true
+    
+    markdown: kramdown
+    highlighter: rouge
+    
+    kramdown:
+      syntax_highlighter_opts:
+        block:
+          line_numbers: false
+    
+    exclude:
+      - SUMMARY.md
+      - Gemfile
+      - Gemfile.lock
+      - node_modules/
+      - vendor/
+    
+    plugins:
+      - jekyll-seo-tag
+    EOF

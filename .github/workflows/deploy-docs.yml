@@ -21,7 +21,7 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: Prepare content for Docsy
+      - name: Prepare content for Documentation Theme
         run: |
           # Create site directory
           mkdir -p _site_source
@@ -29,7 +29,7 @@ jobs:
           # Copy admin-panel content
           cp -r docs/admin-panel/* _site_source/
           
-          # Rename all README.md files to index.md (keep standard Jekyll convention)
+          # Rename all README.md files to index.md
           find _site_source -name "README.md" -exec sh -c '
             dir=$(dirname "$1")
             mv "$1" "$dir/index.md"
@@ -41,33 +41,32 @@ jobs:
           find _site_source -name "*.md" -type f -exec sed -i 's/{% endhint %}/\n/g' {} \;
           find _site_source -name "*.md" -type f -exec sed -i 's/{% hint %}/> **Note:** /g' {} \;
 
-      - name: Add Docsy front matter
+      - name: Add Documentation Theme front matter
         run: |
           # Root index page
-          if [ -f _site_source/_index.md ]; then
+          if [ -f _site_source/index.md ]; then
             cat > temp_index.md << 'EOF'
           ---
           title: "Admin Panel Documentation"
-          linkTitle: "Documentation"
-          menu:
-            main:
-              weight: 10
+          keywords: homepage
+          sidebar: mydoc_sidebar
+          permalink: index.html
+          summary: Navixy Admin Panel Administration Guide
           ---
           
           EOF
-            tail -n +1 _site_source/_index.md >> temp_index.md
-            mv temp_index.md _site_source/_index.md
+            tail -n +1 _site_source/index.md >> temp_index.md
+            mv temp_index.md _site_source/index.md
           fi
           
           # Access page
           if [ -f _site_source/access.md ]; then
             cat > temp_access.md << 'EOF'
           ---
-          title: "Access"
-          linkTitle: "Access"
-          weight: 10
-          description: >
-            How to access the Navixy Admin Panel
+          title: Access
+          sidebar: mydoc_sidebar
+          permalink: access.html
+          folder: mydoc
           ---
           
           EOF
@@ -76,113 +75,104 @@ jobs:
           fi
           
           # Users section
-          if [ -f _site_source/users/_index.md ]; then
+          if [ -f _site_source/users/index.md ]; then
             cat > temp_users.md << 'EOF'
           ---
-          title: "Users"
-          linkTitle: "Users"
-          weight: 20
-          description: >
-            User management and administration
+          title: Users
+          sidebar: mydoc_sidebar
+          permalink: users.html
+          folder: mydoc
           ---
           
           EOF
-            tail -n +1 _site_source/users/_index.md >> temp_users.md
-            mv temp_users.md _site_source/users/_index.md
+            tail -n +1 _site_source/users/index.md >> temp_users.md
+            mv temp_users.md _site_source/users/index.md
           fi
           
           # Users children
-          weight=10
           for file in _site_source/users/*.md; do
-            if [ "$(basename "$file")" != "_index.md" ] && [ -f "$file" ]; then
+            if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
               title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+              filename=$(basename "$file" .md)
               cat > temp_file.md << EOF
           ---
-          title: "$title"
-          linkTitle: "$title"
-          weight: $weight
-          description: >
-            $title documentation
+          title: $title
+          sidebar: mydoc_sidebar
+          permalink: users_${filename}.html
+          folder: mydoc
           ---
           
           EOF
               tail -n +1 "$file" >> temp_file.md
               mv temp_file.md "$file"
-              weight=$((weight + 10))
             fi
           done
           
           # Devices section
-          if [ -f _site_source/devices/_index.md ]; then
+          if [ -f _site_source/devices/index.md ]; then
             cat > temp_devices.md << 'EOF'
           ---
-          title: "Devices"
-          linkTitle: "Devices"
-          weight: 30
-          description: >
-            Device management and configuration
+          title: Devices
+          sidebar: mydoc_sidebar
+          permalink: devices.html
+          folder: mydoc
           ---
           
           EOF
-            tail -n +1 _site_source/devices/_index.md >> temp_devices.md
-            mv temp_devices.md _site_source/devices/_index.md
+            tail -n +1 _site_source/devices/index.md >> temp_devices.md
+            mv temp_devices.md _site_source/devices/index.md
           fi
           
           # Devices children
-          weight=10
           for file in _site_source/devices/*.md; do
-            if [ "$(basename "$file")" != "_index.md" ] && [ -f "$file" ]; then
+            if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
               title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+              filename=$(basename "$file" .md)
               cat > temp_file.md << EOF
           ---
-          title: "$title"
-          linkTitle: "$title"
-          weight: $weight
-          description: >
-            $title documentation
+          title: $title
+          sidebar: mydoc_sidebar
+          permalink: devices_${filename}.html
+          folder: mydoc
           ---
           
           EOF
               tail -n +1 "$file" >> temp_file.md
               mv temp_file.md "$file"
-              weight=$((weight + 10))
             fi
           done
           
           # Settings section
-          if [ -f _site_source/settings/_index.md ]; then
+          if [ -f _site_source/settings/index.md ]; then
             cat > temp_settings.md << 'EOF'
           ---
-          title: "Settings"
-          linkTitle: "Settings"
-          weight: 40
-          description: >
-            System and user settings configuration
+          title: Settings
+          sidebar: mydoc_sidebar
+          permalink: settings.html
+          folder: mydoc
           ---
           
           EOF
-            tail -n +1 _site_source/settings/_index.md >> temp_settings.md
-            mv temp_settings.md _site_source/settings/_index.md
+            tail -n +1 _site_source/settings/index.md >> temp_settings.md
+            mv temp_settings.md _site_source/settings/index.md
           fi
           
           # Settings children
-          weight=10
           for file in _site_source/settings/*.md; do
-            if [ "$(basename "$file")" != "_index.md" ] && [ -f "$file" ]; then
+            if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
               title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+              filename=$(basename "$file" .md)
               cat > temp_file.md << EOF
           ---
-          title: "$title"
-          linkTitle: "$title"
-          weight: $weight
-          description: >
-            $title documentation
+          title: $title
+          sidebar: mydoc_sidebar
+          permalink: settings_${filename}.html
+          folder: mydoc
           ---
           
           EOF
               tail -n +1 "$file" >> temp_file.md
               mv temp_file.md "$file"
-              weight=$((weight + 10))
             fi
           done
           
@@ -193,79 +183,72 @@ jobs:
               subdir_title=$(echo "$subdir_name" | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
               
               # Subdir index
-              if [ -f "$subdir/_index.md" ]; then
+              if [ -f "$subdir/index.md" ]; then
                 cat > temp_subdir.md << EOF
           ---
-          title: "$subdir_title"
-          linkTitle: "$subdir_title"
-          weight: $weight
-          description: >
-            $subdir_title configuration
+          title: $subdir_title
+          sidebar: mydoc_sidebar
+          permalink: settings_${subdir_name}.html
+          folder: mydoc
           ---
           
           EOF
-                tail -n +1 "$subdir/_index.md" >> temp_subdir.md
-                mv temp_subdir.md "$subdir/_index.md"
-                weight=$((weight + 10))
+                tail -n +1 "$subdir/index.md" >> temp_subdir.md
+                mv temp_subdir.md "$subdir/index.md"
               fi
               
               # Subdir children
-              child_weight=10
               for file in "$subdir"*.md; do
-                if [ "$(basename "$file")" != "_index.md" ] && [ -f "$file" ]; then
+                if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
                   title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+                  filename=$(basename "$file" .md)
                   cat > temp_file.md << EOF
           ---
-          title: "$title"
-          linkTitle: "$title"
-          weight: $child_weight
-          description: >
-            $title documentation
+          title: $title
+          sidebar: mydoc_sidebar
+          permalink: settings_${subdir_name}_${filename}.html
+          folder: mydoc
           ---
           
           EOF
                   tail -n +1 "$file" >> temp_file.md
                   mv temp_file.md "$file"
-                  child_weight=$((child_weight + 10))
                 fi
               done
             fi
           done
           
           # Plans section
-          if [ -f _site_source/plans/_index.md ]; then
+          if [ -f _site_source/plans/index.md ]; then
             cat > temp_plans.md << 'EOF'
           ---
-          title: "Plans"
-          linkTitle: "Plans"
-          weight: 50
-          description: >
-            Plan management and configuration
+          title: Plans
+          sidebar: mydoc_sidebar
+          permalink: plans.html
+          folder: mydoc
           ---
           
           EOF
-            tail -n +1 _site_source/plans/_index.md >> temp_plans.md
-            mv temp_plans.md _site_source/plans/_index.md
+            tail -n +1 _site_source/plans/index.md >> temp_plans.md
+            mv temp_plans.md _site_source/plans/index.md
           fi
           
           # Plans children
-          weight=10
           for file in _site_source/plans/*.md; do
-            if [ "$(basename "$file")" != "_index.md" ] && [ -f "$file" ]; then
+            if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
               title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+              filename=$(basename "$file" .md)
               cat > temp_file.md << EOF
           ---
-          title: "$title"
-          linkTitle: "$title"
-          weight: $weight
-          description: >
-            $title documentation
+          title: $title
+          sidebar: mydoc_sidebar
+          permalink: plans_${filename}.html
+          folder: mydoc
           ---
           
           EOF
               tail -n +1 "$file" >> temp_file.md
               mv temp_file.md "$file"
-              weight=$((weight + 10))
             fi
           done
           
@@ -273,11 +256,10 @@ jobs:
           if [ -f _site_source/reports.md ]; then
             cat > temp_reports.md << 'EOF'
           ---
-          title: "Reports"
-          linkTitle: "Reports"
-          weight: 60
-          description: >
-            Reporting and analytics
+          title: Reports
+          sidebar: mydoc_sidebar
+          permalink: reports.html
+          folder: mydoc
           ---
           
           EOF
@@ -288,11 +270,10 @@ jobs:
           if [ -f _site_source/resellers.md ]; then
             cat > temp_resellers.md << 'EOF'
           ---
-          title: "Resellers"
-          linkTitle: "Resellers"
-          weight: 70
-          description: >
-            Reseller management
+          title: Resellers
+          sidebar: mydoc_sidebar
+          permalink: resellers.html
+          folder: mydoc
           ---
           
           EOF
@@ -300,103 +281,363 @@ jobs:
             mv temp_resellers.md _site_source/resellers.md
           fi
 
-      - name: Create Jekyll configuration for Docsy
+      - name: Create sidebar navigation
+        run: |
+          mkdir -p _site_source/_data/sidebars
+          cat > _site_source/_data/sidebars/mydoc_sidebar.yml << 'EOF'
+          entries:
+          - title: sidebar
+            product: Admin Panel Documentation
+            version: 1.0
+            folders:
+          
+            - title: Getting Started
+              output: web, pdf
+              folderitems:
+              - title: Home
+                url: /index.html
+                output: web, pdf
+                type: homepage
+              - title: Access
+                url: /access.html
+                output: web, pdf
+          
+            - title: Users
+              output: web, pdf
+              folderitems:
+              - title: Users Overview
+                url: /users.html
+                output: web, pdf
+          EOF
+          
+          # Add Users children dynamically
+          for file in _site_source/users/*.md; do
+            if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
+              title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+              filename=$(basename "$file" .md)
+              cat >> _site_source/_data/sidebars/mydoc_sidebar.yml << EOF
+              - title: $title
+                url: /users_${filename}.html
+                output: web, pdf
+          EOF
+            fi
+          done
+          
+          cat >> _site_source/_data/sidebars/mydoc_sidebar.yml << 'EOF'
+          
+            - title: Devices
+              output: web, pdf
+              folderitems:
+              - title: Devices Overview
+                url: /devices.html
+                output: web, pdf
+          EOF
+          
+          # Add Devices children dynamically
+          for file in _site_source/devices/*.md; do
+            if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
+              title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+              filename=$(basename "$file" .md)
+              cat >> _site_source/_data/sidebars/mydoc_sidebar.yml << EOF
+              - title: $title
+                url: /devices_${filename}.html
+                output: web, pdf
+          EOF
+            fi
+          done
+          
+          cat >> _site_source/_data/sidebars/mydoc_sidebar.yml << 'EOF'
+          
+            - title: Settings
+              output: web, pdf
+              folderitems:
+              - title: Settings Overview
+                url: /settings.html
+                output: web, pdf
+          EOF
+          
+          # Add Settings children dynamically
+          for file in _site_source/settings/*.md; do
+            if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
+              title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+              filename=$(basename "$file" .md)
+              cat >> _site_source/_data/sidebars/mydoc_sidebar.yml << EOF
+              - title: $title
+                url: /settings_${filename}.html
+                output: web, pdf
+          EOF
+            fi
+          done
+          
+          # Add Settings subdirectories
+          for subdir in _site_source/settings/*/; do
+            if [ -d "$subdir" ]; then
+              subdir_name=$(basename "$subdir")
+              subdir_title=$(echo "$subdir_name" | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+              cat >> _site_source/_data/sidebars/mydoc_sidebar.yml << EOF
+              - title: $subdir_title
+                url: /settings_${subdir_name}.html
+                output: web, pdf
+          EOF
+              
+              # Add subdir children
+              for file in "$subdir"*.md; do
+                if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
+                  title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+                  filename=$(basename "$file" .md)
+                  cat >> _site_source/_data/sidebars/mydoc_sidebar.yml << EOF
+                - title: $title
+                  url: /settings_${subdir_name}_${filename}.html
+                  output: web, pdf
+          EOF
+                fi
+              done
+            fi
+          done
+          
+          cat >> _site_source/_data/sidebars/mydoc_sidebar.yml << 'EOF'
+          
+            - title: Plans
+              output: web, pdf
+              folderitems:
+              - title: Plans Overview
+                url: /plans.html
+                output: web, pdf
+          EOF
+          
+          # Add Plans children dynamically
+          for file in _site_source/plans/*.md; do
+            if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
+              title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+              filename=$(basename "$file" .md)
+              cat >> _site_source/_data/sidebars/mydoc_sidebar.yml << EOF
+              - title: $title
+                url: /plans_${filename}.html
+                output: web, pdf
+          EOF
+            fi
+          done
+          
+          cat >> _site_source/_data/sidebars/mydoc_sidebar.yml << 'EOF'
+          
+            - title: Other
+              output: web, pdf
+              folderitems:
+              - title: Reports
+                url: /reports.html
+                output: web, pdf
+              - title: Resellers
+                url: /resellers.html
+                output: web, pdf
+          EOF
+
+      - name: Create Jekyll configuration
         run: |
           cat > _site_source/_config.yml << 'EOF'
-          title: "Admin Panel Documentation"
-          description: "Navixy Admin Panel Administration Guide"
-          baseurl: "/udoc"
-          url: "https://amasyunin.github.io"
+          repository: amasyunin/udoc
           
-          # Use Docsy Jekyll theme
-          remote_theme: "vsoch/docsy-jekyll"
+          output: web
+          # this property is useful for conditional filtering of content that is separate from the PDF.
           
-          # Site settings
-          author: "Navixy"
-          email: "support@navixy.com"
+          topnav_title: Admin Panel Documentation
+          # this appears on the top navigation bar next to the home button
           
-          # Search settings
-          search_enabled: true
+          site_title: Admin Panel Documentation
+          # this appears in the html browser tab for the site title (seen mostly by search engines, not users)
           
-          # Defaults
+          company_name: Navixy
+          # this appears in the footer
+          
+          github_editme_path: # DISABLED - no edit buttons
+          # if you're using Github, provide the basepath to the branch you've created for reviews, following the sample here. if not, leave this value blank.
+          
+          # gitlab_editme_path: tomjoht/documentation-theme-jekyll/blob/gh-pages/
+          # if you're using GitLab, provide the basepath to the branch you've created for reviews, following the sample here. if not, leave this value blank.
+          
+          google_analytics: # DISABLED
+          # if you have google-analytics ID, put it in. if not, edit this value to blank.
+          
+          host: 127.0.0.1
+          # the preview server used. Leave as is.
+          
+          port: 4000
+          # the port where the preview is rendered. You can leave this as is unless you have other Jekyll builds using this same port that might cause conflicts. in that case, use another port such as 4006.
+          
+          exclude:
+            - .idea/
+            - .gitignore
+            - vendor
+            - SUMMARY.md
+          # these are the files and directories that jekyll will exclude from the build
+          
+          feedback_subject_line: Admin Panel Documentation
+          
+          feedback_email: # DISABLED
+          # used as a contact email for the Feedback link in the top navigation bar
+          
+          feedback_disable: true
+          # if you uncomment the previous line, the Feedback link gets removed
+          
+          feedback_text: # DISABLED
+          # if you uncomment the previous line, it changes the Feedback text
+          
+          feedback_link: # DISABLED
+          # if you uncomment the previous line, it changes where the feedback link points to
+          
+          highlighter: rouge
+          # library used for syntax highlighting
+          
+          markdown: kramdown
+          kramdown:
+           input: GFM
+           auto_ids: true
+           hard_wrap: false
+           syntax_highlighter: rouge
+          
+          # filter used to process markdown. note that kramdown differs from github-flavored markdown in some subtle ways
+          
+          collections:
+            tooltips:
+              output: false
+          # collections are declared here. this renders the content in _tooltips and processes it, but doesn't output it as actual files in the output unless you change output to true
+          
           defaults:
-            - scope:
+            -
+              scope:
                 path: ""
                 type: "pages"
               values:
                 layout: "page"
+                comments: true
+                # if you don't want to use Commento.io and just hide comments, change true to false wherever you see comments properties
+                search: true
+                sidebar: home_sidebar
+                topnav: topnav
+            -
+              scope:
+                path: ""
+                type: "tooltips"
+              values:
+                layout: "page"
+                search: true
+                tooltip: true
           
-          # Plugins
+            -
+              scope:
+                path: ""
+                type: "posts"
+              values:
+                layout: "post"
+                comments: true
+                # if you don't want to use Commento.io and just hide comments, change true to false wherever you see comments properties
+                search: true
+                sidebar: home_sidebar
+                topnav: topnav
+          
+          # these are defaults used for the frontmatter for these file types
+          
+          sidebars:
+          - home_sidebar
+          - mydoc_sidebar
+          - product1_sidebar
+          - product2_sidebar
+          - other
+          
+          description: "Navixy Admin Panel Administration Guide"
+          # the description is used in the feed.xml file
+          
+          # needed for sitemap.xml file only
+          # url: http://idratherbewriting.com
+          # baseurl: /documentation-theme-jekyll
+          
+          
+          github: [metadata]
+          
+          url: "https://amasyunin.github.io"
+          baseurl: "/udoc"
+          
+          remote_theme: tomjoht/documentation-theme-jekyll
+          
           plugins:
-            - jekyll-feed
             - jekyll-sitemap
             - jekyll-seo-tag
-          
-          # Markdown settings
-          markdown: kramdown
-          highlighter: rouge
-          
-          kramdown:
-            syntax_highlighter_opts:
-              block:
-                line_numbers: false
-          
-          # Exclude files
-          exclude:
-            - SUMMARY.md
-            - Gemfile
-            - Gemfile.lock
-            - node_modules/
-            - vendor/
-            - README.md
           EOF
 
-      - name: Create custom styling to remove branding
+      - name: Create custom CSS to remove header/footer
         run: |
-          mkdir -p _site_source/assets/css
-          cat > _site_source/assets/css/custom.css << 'EOF'
-          /* Remove any theme branding */
-          .footer .text-muted,
-          .footer small,
-          footer .text-muted,
-          footer small {
-            display: none !important;
+          mkdir -p _site_source/css
+          cat > _site_source/css/customstyles.css << 'EOF'
+          /* Remove header completely */
+          .navbar,
+          .navbar-default,
+          #mysidebar .nav > li.active > a {
+              display: none !important;
           }
           
-          /* Hide "powered by" text */
-          *[class*="powered"],
-          *[class*="theme"],
-          *:contains("Docsy"),
-          *:contains("Jekyll") {
-            display: none !important;
+          /* Remove footer completely */
+          .footer,
+          footer,
+          .site-footer {
+              display: none !important;
           }
           
-          /* Custom footer styling */
-          .footer {
-            text-align: center;
-            padding: 2rem 0;
-            border-top: 1px solid #e9ecef;
+          /* Adjust main content to account for removed header */
+          .col-md-9 {
+              margin-top: 0 !important;
+              padding-top: 20px;
           }
           
-          /* Ensure navigation is properly styled */
-          .sidebar {
-            background-color: #f8f9fa;
+          /* Make sidebar full height */
+          #mysidebar {
+              position: fixed;
+              top: 0;
+              left: 0;
+              height: 100vh;
+              width: 300px;
+              overflow-y: auto;
+              background-color: #f7f7f9;
+              border-right: 1px solid #e7e7e7;
+              z-index: 1000;
           }
           
-          .sidebar .nav-link {
-            color: #495057;
+          /* Adjust main content positioning */
+          .col-md-9 {
+              margin-left: 320px;
+              width: calc(100% - 320px);
           }
           
-          .sidebar .nav-link:hover {
-            color: #007bff;
-            background-color: #e9ecef;
+          /* Remove breadcrumbs */
+          .breadcrumb {
+              display: none !important;
           }
-          EOF
           
-          # Create head custom include
-          mkdir -p _site_source/_includes
-          cat > _site_source/_includes/head_custom.html << 'EOF'
-          <link rel="stylesheet" href="{{ '/assets/css/custom.css' | relative_url }}">
+          /* Style sidebar navigation */
+          #mysidebar .nav > li > a {
+              font-weight: normal;
+              color: #333;
+              padding: 8px 15px;
+          }
+          
+          #mysidebar .nav > li > a:hover {
+              background-color: #e7e7e7;
+          }
+          
+          /* Hide edit buttons */
+          .btn-default,
+          .improve_button {
+              display: none !important;
+          }
+          
+          /* Remove any remaining branding */
+          .company_name,
+          .copyright {
+              display: none !important;
+          }
+          
+          body {
+              margin: 0;
+              padding: 0;
+          }
           EOF
 
       - name: Build with Jekyll

@@ -294,9 +294,11 @@ jobs:
             mv temp_resellers.md _site_source/resellers.md
           fi
 
-      - name: Create navigation structure
+      - name: Create dynamic navigation structure
         run: |
           mkdir -p _site_source/_data
+          
+          # Generate navigation based on actual files
           cat > _site_source/_data/navigation.yml << 'EOF'
           docs:
             - title: "Home"
@@ -306,35 +308,131 @@ jobs:
             - title: "Users"
               url: /users/
               children:
-                - title: "User Management"
-                  url: /users/user-management/
-                - title: "User Roles"
-                  url: /users/user-roles/
+          EOF
+          
+          # Add Users children dynamically
+          for file in _site_source/users/*.md; do
+            if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
+              title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+              url="/users/$(basename "$file" .md)/"
+              echo "        - title: \"$title\"" >> _site_source/_data/navigation.yml
+              echo "          url: $url" >> _site_source/_data/navigation.yml
+            fi
+          done
+          
+          cat >> _site_source/_data/navigation.yml << 'EOF'
             - title: "Devices"
               url: /devices/
               children:
-                - title: "Device Management"
-                  url: /devices/device-management/
-                - title: "Air Console"
-                  url: /devices/air-console/
+          EOF
+          
+          # Add Devices children dynamically
+          for file in _site_source/devices/*.md; do
+            if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
+              title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+              url="/devices/$(basename "$file" .md)/"
+              echo "        - title: \"$title\"" >> _site_source/_data/navigation.yml
+              echo "          url: $url" >> _site_source/_data/navigation.yml
+            fi
+          done
+          
+          cat >> _site_source/_data/navigation.yml << 'EOF'
             - title: "Settings"
               url: /settings/
               children:
-                - title: "System Settings"
-                  url: /settings/system-settings/
-                - title: "User Settings"
-                  url: /settings/user-settings/
+          EOF
+          
+          # Add Settings children dynamically
+          for file in _site_source/settings/*.md; do
+            if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
+              title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+              url="/settings/$(basename "$file" .md)/"
+              echo "        - title: \"$title\"" >> _site_source/_data/navigation.yml
+              echo "          url: $url" >> _site_source/_data/navigation.yml
+            fi
+          done
+          
+          # Add Settings subdirectories
+          for subdir in _site_source/settings/*/; do
+            if [ -d "$subdir" ]; then
+              subdir_name=$(basename "$subdir")
+              subdir_title=$(echo "$subdir_name" | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+              echo "        - title: \"$subdir_title\"" >> _site_source/_data/navigation.yml
+              echo "          url: /settings/$subdir_name/" >> _site_source/_data/navigation.yml
+              echo "          children:" >> _site_source/_data/navigation.yml
+              
+              # Add subdir children
+              for file in "$subdir"*.md; do
+                if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
+                  title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+                  url="/settings/$subdir_name/$(basename "$file" .md)/"
+                  echo "          - title: \"$title\"" >> _site_source/_data/navigation.yml
+                  echo "            url: $url" >> _site_source/_data/navigation.yml
+                fi
+              done
+            fi
+          done
+          
+          cat >> _site_source/_data/navigation.yml << 'EOF'
             - title: "Plans"
               url: /plans/
               children:
-                - title: "Plan Management"
-                  url: /plans/plan-management/
-                - title: "Activation Codes"
-                  url: /plans/activation-codes/
+          EOF
+          
+          # Add Plans children dynamically
+          for file in _site_source/plans/*.md; do
+            if [ "$(basename "$file")" != "index.md" ] && [ -f "$file" ]; then
+              title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+              url="/plans/$(basename "$file" .md)/"
+              echo "        - title: \"$title\"" >> _site_source/_data/navigation.yml
+              echo "          url: $url" >> _site_source/_data/navigation.yml
+            fi
+          done
+          
+          cat >> _site_source/_data/navigation.yml << 'EOF'
             - title: "Reports"
               url: /reports/
             - title: "Resellers"
               url: /resellers/
+          EOF
+
+      - name: Create custom CSS for better navigation
+        run: |
+          mkdir -p _site_source/assets/css
+          cat > _site_source/assets/css/custom.css << 'EOF'
+          /* Hide footer completely */
+          .page__footer {
+            display: none !important;
+          }
+          
+          /* Style collapsible navigation */
+          .nav__list .nav__items {
+            padding-left: 0;
+          }
+          
+          .nav__list .nav__items .nav__item {
+            margin: 0;
+          }
+          
+          /* Ensure navigation children are collapsible */
+          .nav__list .nav__items .nav__item .nav__sub-title {
+            cursor: pointer;
+            font-weight: bold;
+            margin-bottom: 0.5em;
+          }
+          
+          /* Hide theme attribution */
+          .page__footer-copyright,
+          .page__footer-follow,
+          footer {
+            display: none !important;
+          }
+          EOF
+          
+          # Create custom head include
+          mkdir -p _site_source/_includes
+          cat > _site_source/_includes/head_custom.html << 'EOF'
+          <link rel="stylesheet" href="{{ '/assets/css/custom.css' | relative_url }}">
           EOF
 
       - name: Create Jekyll configuration
@@ -358,14 +456,14 @@ jobs:
           locale: "en-US"
           name: "Navixy"
           
-          # Site footer
-          footer:
-            links:
-              - label: "Navixy Website"
-                icon: "fas fa-fw fa-link"
-                url: "https://navixy.com"
+          # Remove footer completely
+          footer: false
           
-          # Defaults for pages
+          # Remove author and other elements
+          author:
+            name: false
+          
+          # Disable social sharing and related posts
           defaults:
             - scope:
                 path: ""
@@ -377,6 +475,7 @@ jobs:
                 comments: false
                 share: false
                 related: false
+                show_date: false
                 sidebar:
                   nav: "docs"
           

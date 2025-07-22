@@ -365,6 +365,11 @@ jobs:
           cat > _site_source/_includes/head_custom.html << 'EOF'
           <link rel="stylesheet" href="{{ '/assets/css/custom.css' | relative_url }}">
           EOF
+          
+          # Override footer template completely
+          cat > _site_source/_includes/footer_custom.html << 'EOF'
+          <p class="text-small text-grey-dk-100 mb-0">© 2025 Navixy. All rights reserved.</p>
+          EOF
 
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1

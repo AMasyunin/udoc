@@ -143,7 +143,7 @@ jobs:
             # Add front matter to all other markdown files
             find "$lang_dir" -name "*.md" -not -path "$lang_dir/index.md" -type f | while read file; do
               if ! head -n 1 "$file" | grep -q "^---$"; then
-                # Determine title based on file type
+                # Determine title based on file type and path
                 rel_path="${file#$lang_dir/}"
                 if [[ "$rel_path" =~ ^(users|devices|settings|plans)/index\.md$ ]]; then
                   # Section index files: use directory name
@@ -427,62 +427,62 @@ jobs:
                       </div>
                       
                       <div class="nav-section">
-                          <a href="{{ '/' | append: page.language | append: '/index.html' | relative_url }}" class="nav-section-title" data-section="getting-started">Getting Started</a>
+                          <a href="{{ site.baseurl }}/{{ page.language }}/index.html" class="nav-section-title" data-section="getting-started">Getting Started</a>
                           <div class="nav-items" id="getting-started">
-                              <a href="{{ '/' | append: page.language | append: '/access.html' | relative_url }}">Access</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/access.html">Access</a>
                           </div>
                       </div>
                       
                       <div class="nav-section">
-                          <a href="{{ '/' | append: page.language | append: '/users/index.html' | relative_url }}" class="nav-section-title" data-section="users">Users</a>
+                          <a href="{{ site.baseurl }}/{{ page.language }}/users/index.html" class="nav-section-title" data-section="users">Users</a>
                           <div class="nav-items" id="users">
-                              <a href="{{ '/' | append: page.language | append: '/users/billing-operations.html' | relative_url }}">Billing Operations</a>
-                              <a href="{{ '/' | append: page.language | append: '/users/create-user.html' | relative_url }}">Create User</a>
-                              <a href="{{ '/' | append: page.language | append: '/users/delete-user.html' | relative_url }}">Delete User</a>
-                              <a href="{{ '/' | append: page.language | append: '/users/user-details.html' | relative_url }}">User Details</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/users/billing-operations.html">Billing Operations</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/users/create-user.html">Create User</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/users/delete-user.html">Delete User</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/users/user-details.html">User Details</a>
                           </div>
                       </div>
                       
                       <div class="nav-section">
-                          <a href="{{ '/' | append: page.language | append: '/devices/index.html' | relative_url }}" class="nav-section-title" data-section="devices">Devices</a>
+                          <a href="{{ site.baseurl }}/{{ page.language }}/devices/index.html" class="nav-section-title" data-section="devices">Devices</a>
                           <div class="nav-items" id="devices">
-                              <a href="{{ '/' | append: page.language | append: '/devices/air-console.html' | relative_url }}">Air Console</a>
-                              <a href="{{ '/' | append: page.language | append: '/devices/basic-operations.html' | relative_url }}">Basic Operations</a>
-                              <a href="{{ '/' | append: page.language | append: '/devices/bulk-activation.html' | relative_url }}">Bulk Activation</a>
-                              <a href="{{ '/' | append: page.language | append: '/devices/change-plan.html' | relative_url }}">Change Plan</a>
-                              <a href="{{ '/' | append: page.language | append: '/devices/tracker-clones.html' | relative_url }}">Tracker Clones</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/devices/air-console.html">Air Console</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/devices/basic-operations.html">Basic Operations</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/devices/bulk-activation.html">Bulk Activation</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/devices/change-plan.html">Change Plan</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/devices/tracker-clones.html">Tracker Clones</a>
                           </div>
                       </div>
                       
                       <div class="nav-section">
-                          <a href="{{ '/' | append: page.language | append: '/settings/index.html' | relative_url }}" class="nav-section-title" data-section="settings">Settings</a>
+                          <a href="{{ site.baseurl }}/{{ page.language }}/settings/index.html" class="nav-section-title" data-section="settings">Settings</a>
                           <div class="nav-items" id="settings">
-                              <a href="{{ '/' | append: page.language | append: '/settings/branding-options.html' | relative_url }}">Branding Options</a>
-                              <a href="{{ '/' | append: page.language | append: '/settings/custom-menu-editor.html' | relative_url }}">Custom Menu Editor</a>
-                              <a href="{{ '/' | append: page.language | append: '/settings/domain-name.html' | relative_url }}">Domain Name</a>
-                              <a href="{{ '/' | append: page.language | append: '/settings/payment-gateway.html' | relative_url }}">Payment Gateway</a>
-                              <a href="{{ '/' | append: page.language | append: '/settings/two-factor-authentication.html' | relative_url }}">Two Factor Authentication</a>
-                              <a href="{{ '/' | append: page.language | append: '/settings/maps/index.html' | relative_url }}">Maps</a>
-                              <a href="{{ '/' | append: page.language | append: '/settings/messaging-gateways/index.html' | relative_url }}">Messaging Gateways</a>
-                              <a href="{{ '/' | append: page.language | append: '/settings/service-preferences/index.html' | relative_url }}">Service Preferences</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/settings/branding-options.html">Branding Options</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/settings/custom-menu-editor.html">Custom Menu Editor</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/settings/domain-name.html">Domain Name</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/settings/payment-gateway.html">Payment Gateway</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/settings/two-factor-authentication.html">Two Factor Authentication</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/settings/maps/index.html">Maps</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/settings/messaging-gateways/index.html">Messaging Gateways</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/settings/service-preferences/index.html">Service Preferences</a>
                           </div>
                       </div>
                       
                       <div class="nav-section">
-                          <a href="{{ '/' | append: page.language | append: '/plans/index.html' | relative_url }}" class="nav-section-title" data-section="plans">Plans</a>
+                          <a href="{{ site.baseurl }}/{{ page.language }}/plans/index.html" class="nav-section-title" data-section="plans">Plans</a>
                           <div class="nav-items" id="plans">
-                              <a href="{{ '/' | append: page.language | append: '/plans/activation-codes.html' | relative_url }}">Activation Codes</a>
-                              <a href="{{ '/' | append: page.language | append: '/plans/assets-are-not-displayed-in-the-account.html' | relative_url }}">Assets Are Not Displayed</a>
-                              <a href="{{ '/' | append: page.language | append: '/plans/pricing-plans-conflicts.html' | relative_url }}">Pricing Plans Conflicts</a>
-                              <a href="{{ '/' | append: page.language | append: '/plans/suspending-service-for-a-device.html' | relative_url }}">Suspending Service</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/plans/activation-codes.html">Activation Codes</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/plans/assets-are-not-displayed-in-the-account.html">Assets Are Not Displayed</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/plans/pricing-plans-conflicts.html">Pricing Plans Conflicts</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/plans/suspending-service-for-a-device.html">Suspending Service</a>
                           </div>
                       </div>
                       
                       <div class="nav-section">
                           <div class="nav-section-title" data-section="other">Other</div>
                           <div class="nav-items" id="other">
-                              <a href="{{ '/' | append: page.language | append: '/reports.html' | relative_url }}">Reports</a>
-                              <a href="{{ '/' | append: page.language | append: '/resellers.html' | relative_url }}">Resellers</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/reports.html">Reports</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/resellers.html">Resellers</a>
                           </div>
                       </div>
                   </nav>
@@ -497,6 +497,7 @@ jobs:
                       const sectionTitles = document.querySelectorAll('.nav-section-title');
                       const currentPath = window.location.pathname;
                       const languageSelector = document.getElementById('languageSelector');
+                      const baseUrl = '{{ site.baseurl }}' || '';
                       
                       // Handle language selector change
                       if (languageSelector) {
@@ -504,14 +505,14 @@ jobs:
                               const newLang = this.value;
                               const currentLang = '{{ page.language }}';
                               
-                              // Replace language in current URL
-                              let newPath = currentPath.replace('/' + currentLang + '/', '/' + newLang + '/');
-                              
-                              // If we're at the root, redirect to the new language root
-                              if (currentPath.endsWith('/' + currentLang + '/') || currentPath.endsWith('/' + currentLang)) {
-                                  newPath = window.location.origin + window.location.pathname.replace(currentPath, '') + '/' + newLang + '/';
+                              // Extract the page path after language
+                              let pathAfterLang = currentPath;
+                              if (pathAfterLang.includes('/' + currentLang + '/')) {
+                                  pathAfterLang = pathAfterLang.split('/' + currentLang + '/')[1] || 'index.html';
                               }
                               
+                              // Construct new URL
+                              const newPath = baseUrl + '/' + newLang + '/' + pathAfterLang;
                               window.location.href = newPath;
                           });
                       }
@@ -545,8 +546,8 @@ jobs:
                           
                           // Highlight current page
                           document.querySelectorAll('.nav-items a, .nav-section-title').forEach(link => {
-                              const linkPath = link.getAttribute('href');
-                              if (linkPath && (currentPath.endsWith(linkPath) || linkPath.endsWith(currentPath.split('/').pop()))) {
+                              const linkHref = link.getAttribute('href');
+                              if (linkHref && currentPath.endsWith(linkHref.split('/').pop())) {
                                   link.classList.add('active');
                               }
                           });
@@ -615,18 +616,15 @@ jobs:
           plugins:
             - jekyll-seo-tag
           
-          # Language defaults
+          # Collections for language handling
+          collections_dir: "."
+          
+          # Language defaults - simplified for debugging
           defaults:
             - scope:
-                path: "en"
+                path: ""
               values:
-                language: "en"
-                language_name: "English"
-            - scope:
-                path: "es"
-              values:
-                language: "es"
-                language_name: "Español"
+                layout: "default"
           EOF
 
       - name: Create root index redirect
@@ -638,24 +636,61 @@ jobs:
           default_lang="${LANG_CODES[0]}"
           
           cat > _site_source/index.html << EOF
+          ---
+          ---
           <!DOCTYPE html>
           <html>
           <head>
               <meta charset="UTF-8">
-              <meta http-equiv="refresh" content="0; url={{ '/$default_lang/' | relative_url }}">
-              <title>Redirecting...</title>
+              <meta http-equiv="refresh" content="0; url={{ site.baseurl }}/$default_lang/">
+              <link rel="canonical" href="{{ site.baseurl }}/$default_lang/" />
+              <title>Redirecting to Admin Panel Documentation</title>
           </head>
           <body>
-              <p>Redirecting to <a href="{{ '/$default_lang/' | relative_url }}">English documentation</a>...</p>
+              <h1>Admin Panel Documentation</h1>
+              <p>Redirecting to <a href="{{ site.baseurl }}/$default_lang/">English documentation</a>...</p>
+              <script>
+                  window.location.href = "{{ site.baseurl }}/$default_lang/";
+              </script>
           </body>
           </html>
           EOF
+
+      - name: Debug - List generated files
+        run: |
+          echo "=== Generated file structure ==="
+          find _site_source -type f -name "*.html" -o -name "*.md" -o -name "*.yml" | head -20
+          echo ""
+          echo "=== Root files ==="
+          ls -la _site_source/
+          echo ""
+          echo "=== Language directories ==="
+          ls -la _site_source/*/
+          echo ""
+          echo "=== Sample index files ==="
+          if [ -f "_site_source/en/index.md" ]; then
+            echo "English index front matter:"
+            head -10 _site_source/en/index.md
+          fi
 
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1
         with:
           source: ./_site_source
           destination: ./_site
+
+      - name: Debug - List built files
+        run: |
+          echo "=== Built site structure ==="
+          find _site -name "*.html" | head -20
+          echo ""
+          echo "=== Built root files ==="
+          ls -la _site/
+          echo ""
+          if [ -f "_site/index.html" ]; then
+            echo "=== Root index.html content ==="
+            cat _site/index.html
+          fi
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

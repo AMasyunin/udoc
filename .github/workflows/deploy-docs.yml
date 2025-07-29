@@ -749,7 +749,7 @@ jobs:
               find docs/admin-panel-es/admin-panel -name "*.md" -maxdepth 1 | sort
             fi
           fi
-        run: |
+          echo ""
           echo "=== Final Navigation Structure ==="
           cat _site_source/_data/navigation.yml
           echo ""

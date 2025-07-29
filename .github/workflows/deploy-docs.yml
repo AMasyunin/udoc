@@ -1,9 +1,9 @@
-name: Deploy Admin Panel Docs
+name: Deploy Multi-Language Admin Panel Docs
 
 on:
   push:
     branches: [ main, master, userdocs ]
-    paths: [ 'docs/admin-panel/**' ]
+    paths: [ 'docs/admin-panel**' ]
   workflow_dispatch:
 
 permissions:
@@ -21,74 +21,188 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: Prepare content
+      - name: Detect available languages
+        id: detect-languages
         run: |
           # Create site directory
           mkdir -p _site_source
           
-          # Copy admin-panel content
-          cp -r docs/admin-panel/* _site_source/
+          # Detect all admin-panel folders and extract language codes
+          languages=""
+          language_names=""
           
-          # Rename all README.md files to index.md
-          find _site_source -name "README.md" -exec sh -c '
-            dir=$(dirname "$1")
-            mv "$1" "$dir/index.md"
-            echo "Renamed $1 to $dir/index.md"
-          ' _ {} \;
+          for dir in docs/admin-panel*; do
+            if [ -d "$dir" ]; then
+              basename_dir=$(basename "$dir")
+              if [ "$basename_dir" = "admin-panel" ]; then
+                # Default English
+                lang_code="en"
+                lang_name="English"
+              else
+                # Extract locale from admin-panel-{locale}
+                lang_code="${basename_dir#admin-panel-}"
+                case "$lang_code" in
+                  "es") lang_name="Español" ;;
+                  "ru") lang_name="Русский" ;;
+                  "fr") lang_name="Français" ;;
+                  "de") lang_name="Deutsch" ;;
+                  "it") lang_name="Italiano" ;;
+                  "pt") lang_name="Português" ;;
+                  *) lang_name="$(echo ${lang_code} | tr '[:lower:]' '[:upper:]')" ;;
+                esac
+              fi
+              
+              echo "Found language: $lang_code ($lang_name) in $dir"
+              
+              if [ -z "$languages" ]; then
+                languages="$lang_code"
+                language_names="$lang_name"
+              else
+                languages="$languages,$lang_code"
+                language_names="$language_names,$lang_name"
+              fi
+            fi
+          done
           
-          # Fix GitBook syntax
-          find _site_source -name "*.md" -type f -exec sed -i 's/{% hint style="[^"]*" %}/> **Note:** /g' {} \;
-          find _site_source -name "*.md" -type f -exec sed -i 's/{% endhint %}/\n/g' {} \;
-          find _site_source -name "*.md" -type f -exec sed -i 's/{% hint %}/> **Note:** /g' {} \;
+          echo "languages=$languages" >> $GITHUB_OUTPUT
+          echo "language_names=$language_names" >> $GITHUB_OUTPUT
+          echo "Detected languages: $languages"
+          echo "Language names: $language_names"
+
+      - name: Process each language
+        env:
+          LANGUAGES: ${{ steps.detect-languages.outputs.languages }}
+          LANGUAGE_NAMES: ${{ steps.detect-languages.outputs.language_names }}
+        run: |
+          IFS=',' read -ra LANG_CODES <<< "$LANGUAGES"
+          IFS=',' read -ra LANG_NAMES <<< "$LANGUAGE_NAMES"
+          
+          for i in "${!LANG_CODES[@]}"; do
+            lang_code="${LANG_CODES[$i]}"
+            lang_name="${LANG_NAMES[$i]}"
+            
+            echo "Processing language: $lang_code ($lang_name)"
+            
+            # Determine source directory
+            if [ "$lang_code" = "en" ]; then
+              source_dir="docs/admin-panel"
+            else
+              source_dir="docs/admin-panel-$lang_code"
+            fi
+            
+            # Create language-specific directory
+            lang_dir="_site_source/$lang_code"
+            mkdir -p "$lang_dir"
+            
+            # Copy content
+            cp -r "$source_dir"/* "$lang_dir/"
+            
+            # Rename all README.md files to index.md
+            find "$lang_dir" -name "README.md" -exec sh -c '
+              dir=$(dirname "$1")
+              mv "$1" "$dir/index.md"
+              echo "Renamed $1 to $dir/index.md"
+            ' _ {} \;
+            
+            # Fix GitBook syntax
+            find "$lang_dir" -name "*.md" -type f -exec sed -i 's/{% hint style="[^"]*" %}/> **Note:** /g' {} \;
+            find "$lang_dir" -name "*.md" -type f -exec sed -i 's/{% endhint %}/\n/g' {} \;
+            find "$lang_dir" -name "*.md" -type f -exec sed -i 's/{% hint %}/> **Note:** /g' {} \;
+          done
 
       - name: Add front matter to all pages
+        env:
+          LANGUAGES: ${{ steps.detect-languages.outputs.languages }}
+          LANGUAGE_NAMES: ${{ steps.detect-languages.outputs.language_names }}
         run: |
-          # Root index page
-          if [ -f _site_source/index.md ]; then
-            cat > temp_index.md << 'EOF'
+          IFS=',' read -ra LANG_CODES <<< "$LANGUAGES"
+          IFS=',' read -ra LANG_NAMES <<< "$LANGUAGE_NAMES"
+          
+          for i in "${!LANG_CODES[@]}"; do
+            lang_code="${LANG_CODES[$i]}"
+            lang_name="${LANG_NAMES[$i]}"
+            lang_dir="_site_source/$lang_code"
+            
+            echo "Adding front matter for $lang_code"
+            
+            # Root index page
+            if [ -f "$lang_dir/index.md" ]; then
+              cat > temp_index.md << EOF
           ---
           layout: default
           title: "Admin Panel"
+          language: "$lang_code"
+          language_name: "$lang_name"
           ---
           
           EOF
-            tail -n +1 _site_source/index.md >> temp_index.md
-            mv temp_index.md _site_source/index.md
-          fi
-          
-          # Add front matter to all other markdown files
-          find _site_source -name "*.md" -not -path "_site_source/index.md" -type f | while read file; do
-            if ! head -n 1 "$file" | grep -q "^---$"; then
-              # Determine title based on file type
-              if [[ "$file" =~ _site_source/(users|devices|settings|plans)/index\.md$ ]]; then
-                # Section index files: use directory name
-                dir_name=$(basename $(dirname "$file"))
-                title=$(echo "$dir_name" | sed 's/\b\w/\U&/g')
-              else
-                # Sub-pages: use filename
-                title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
-              fi
-              
-              cat > temp_file.md << 'EOF'
+              tail -n +1 "$lang_dir/index.md" >> temp_index.md
+              mv temp_index.md "$lang_dir/index.md"
+            fi
+            
+            # Add front matter to all other markdown files
+            find "$lang_dir" -name "*.md" -not -path "$lang_dir/index.md" -type f | while read file; do
+              if ! head -n 1 "$file" | grep -q "^---$"; then
+                # Determine title based on file type
+                rel_path="${file#$lang_dir/}"
+                if [[ "$rel_path" =~ ^(users|devices|settings|plans)/index\.md$ ]]; then
+                  # Section index files: use directory name
+                  dir_name=$(basename $(dirname "$file"))
+                  title=$(echo "$dir_name" | sed 's/\b\w/\U&/g')
+                else
+                  # Sub-pages: use filename
+                  title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+                fi
+                
+                cat > temp_file.md << EOF
           ---
           layout: default
-          title: "TITLE_PLACEHOLDER"
+          title: "$title"
+          language: "$lang_code"
+          language_name: "$lang_name"
           ---
           
           EOF
-              sed "s/TITLE_PLACEHOLDER/$title/g" temp_file.md > temp_file2.md
-              cat "$file" >> temp_file2.md
-              mv temp_file2.md "$file"
-              rm -f temp_file.md
-            fi
+                cat "$file" >> temp_file.md
+                mv temp_file.md "$file"
+              fi
+            done
           done
+
+      - name: Create language configuration
+        env:
+          LANGUAGES: ${{ steps.detect-languages.outputs.languages }}
+          LANGUAGE_NAMES: ${{ steps.detect-languages.outputs.language_names }}
+        run: |
+          mkdir -p _site_source/_data
+          
+          # Create languages.yml for Jekyll
+          cat > _site_source/_data/languages.yml << 'EOF'
+          # Available languages configuration
+          EOF
+          
+          IFS=',' read -ra LANG_CODES <<< "$LANGUAGES"
+          IFS=',' read -ra LANG_NAMES <<< "$LANGUAGE_NAMES"
+          
+          for i in "${!LANG_CODES[@]}"; do
+            lang_code="${LANG_CODES[$i]}"
+            lang_name="${LANG_NAMES[$i]}"
+            
+            cat >> _site_source/_data/languages.yml << EOF
+          - code: "$lang_code"
+            name: "$lang_name"
+          EOF
+          done
+          
+          echo "Created languages configuration:"
+          cat _site_source/_data/languages.yml
 
       - name: Create custom Jekyll layout
         run: |
           mkdir -p _site_source/_layouts
           cat > _site_source/_layouts/default.html << 'EOF'
           <!DOCTYPE html>
-          <html lang="en">
+          <html lang="{{ page.language | default: 'en' }}">
           <head>
               <meta charset="UTF-8">
               <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -122,12 +236,35 @@ jobs:
                       height: 100vh;
                   }
                   
-                  .sidebar h3 {
-                      padding: 0 20px 10px;
-                      font-size: 18px;
-                      color: #24292e;
+                  .sidebar-header {
+                      padding: 0 20px 15px;
                       border-bottom: 1px solid #e1e4e8;
                       margin-bottom: 15px;
+                  }
+                  
+                  .sidebar h3 {
+                      font-size: 18px;
+                      color: #24292e;
+                      margin-bottom: 10px;
+                  }
+                  
+                  .language-selector {
+                      position: relative;
+                      margin-bottom: 10px;
+                  }
+                  
+                  .language-dropdown {
+                      width: 100%;
+                      padding: 8px 12px;
+                      border: 1px solid #e1e4e8;
+                      border-radius: 4px;
+                      background: white;
+                      font-size: 14px;
+                      cursor: pointer;
+                  }
+                  
+                  .language-dropdown:hover {
+                      border-color: #0366d6;
                   }
                   
                   .nav-section {
@@ -276,65 +413,76 @@ jobs:
           <body>
               <div class="container">
                   <nav class="sidebar">
-                      <h3>Admin Panel</h3>
+                      <div class="sidebar-header">
+                          <h3>Admin Panel</h3>
+                          <div class="language-selector">
+                              <select class="language-dropdown" id="languageSelector">
+                                  {% for lang in site.data.languages %}
+                                  <option value="{{ lang.code }}" {% if page.language == lang.code %}selected{% endif %}>
+                                      {{ lang.name }}
+                                  </option>
+                                  {% endfor %}
+                              </select>
+                          </div>
+                      </div>
                       
                       <div class="nav-section">
-                          <a href="{{ '/index.html' | relative_url }}" class="nav-section-title" data-section="getting-started">Getting Started</a>
+                          <a href="{{ '/' | append: page.language | append: '/index.html' | relative_url }}" class="nav-section-title" data-section="getting-started">Getting Started</a>
                           <div class="nav-items" id="getting-started">
-                              <a href="{{ '/access.html' | relative_url }}">Access</a>
+                              <a href="{{ '/' | append: page.language | append: '/access.html' | relative_url }}">Access</a>
                           </div>
                       </div>
                       
                       <div class="nav-section">
-                          <a href="{{ '/users/index.html' | relative_url }}" class="nav-section-title" data-section="users">Users</a>
+                          <a href="{{ '/' | append: page.language | append: '/users/index.html' | relative_url }}" class="nav-section-title" data-section="users">Users</a>
                           <div class="nav-items" id="users">
-                              <a href="{{ '/users/billing-operations.html' | relative_url }}">Billing Operations</a>
-                              <a href="{{ '/users/create-user.html' | relative_url }}">Create User</a>
-                              <a href="{{ '/users/delete-user.html' | relative_url }}">Delete User</a>
-                              <a href="{{ '/users/user-details.html' | relative_url }}">User Details</a>
+                              <a href="{{ '/' | append: page.language | append: '/users/billing-operations.html' | relative_url }}">Billing Operations</a>
+                              <a href="{{ '/' | append: page.language | append: '/users/create-user.html' | relative_url }}">Create User</a>
+                              <a href="{{ '/' | append: page.language | append: '/users/delete-user.html' | relative_url }}">Delete User</a>
+                              <a href="{{ '/' | append: page.language | append: '/users/user-details.html' | relative_url }}">User Details</a>
                           </div>
                       </div>
                       
                       <div class="nav-section">
-                          <a href="{{ '/devices/index.html' | relative_url }}" class="nav-section-title" data-section="devices">Devices</a>
+                          <a href="{{ '/' | append: page.language | append: '/devices/index.html' | relative_url }}" class="nav-section-title" data-section="devices">Devices</a>
                           <div class="nav-items" id="devices">
-                              <a href="{{ '/devices/air-console.html' | relative_url }}">Air Console</a>
-                              <a href="{{ '/devices/basic-operations.html' | relative_url }}">Basic Operations</a>
-                              <a href="{{ '/devices/bulk-activation.html' | relative_url }}">Bulk Activation</a>
-                              <a href="{{ '/devices/change-plan.html' | relative_url }}">Change Plan</a>
-                              <a href="{{ '/devices/tracker-clones.html' | relative_url }}">Tracker Clones</a>
+                              <a href="{{ '/' | append: page.language | append: '/devices/air-console.html' | relative_url }}">Air Console</a>
+                              <a href="{{ '/' | append: page.language | append: '/devices/basic-operations.html' | relative_url }}">Basic Operations</a>
+                              <a href="{{ '/' | append: page.language | append: '/devices/bulk-activation.html' | relative_url }}">Bulk Activation</a>
+                              <a href="{{ '/' | append: page.language | append: '/devices/change-plan.html' | relative_url }}">Change Plan</a>
+                              <a href="{{ '/' | append: page.language | append: '/devices/tracker-clones.html' | relative_url }}">Tracker Clones</a>
                           </div>
                       </div>
                       
                       <div class="nav-section">
-                          <a href="{{ '/settings/index.html' | relative_url }}" class="nav-section-title" data-section="settings">Settings</a>
+                          <a href="{{ '/' | append: page.language | append: '/settings/index.html' | relative_url }}" class="nav-section-title" data-section="settings">Settings</a>
                           <div class="nav-items" id="settings">
-                              <a href="{{ '/settings/branding-options.html' | relative_url }}">Branding Options</a>
-                              <a href="{{ '/settings/custom-menu-editor.html' | relative_url }}">Custom Menu Editor</a>
-                              <a href="{{ '/settings/domain-name.html' | relative_url }}">Domain Name</a>
-                              <a href="{{ '/settings/payment-gateway.html' | relative_url }}">Payment Gateway</a>
-                              <a href="{{ '/settings/two-factor-authentication.html' | relative_url }}">Two Factor Authentication</a>
-                              <a href="{{ '/settings/maps/index.html' | relative_url }}">Maps</a>
-                              <a href="{{ '/settings/messaging-gateways/index.html' | relative_url }}">Messaging Gateways</a>
-                              <a href="{{ '/settings/service-preferences/index.html' | relative_url }}">Service Preferences</a>
+                              <a href="{{ '/' | append: page.language | append: '/settings/branding-options.html' | relative_url }}">Branding Options</a>
+                              <a href="{{ '/' | append: page.language | append: '/settings/custom-menu-editor.html' | relative_url }}">Custom Menu Editor</a>
+                              <a href="{{ '/' | append: page.language | append: '/settings/domain-name.html' | relative_url }}">Domain Name</a>
+                              <a href="{{ '/' | append: page.language | append: '/settings/payment-gateway.html' | relative_url }}">Payment Gateway</a>
+                              <a href="{{ '/' | append: page.language | append: '/settings/two-factor-authentication.html' | relative_url }}">Two Factor Authentication</a>
+                              <a href="{{ '/' | append: page.language | append: '/settings/maps/index.html' | relative_url }}">Maps</a>
+                              <a href="{{ '/' | append: page.language | append: '/settings/messaging-gateways/index.html' | relative_url }}">Messaging Gateways</a>
+                              <a href="{{ '/' | append: page.language | append: '/settings/service-preferences/index.html' | relative_url }}">Service Preferences</a>
                           </div>
                       </div>
                       
                       <div class="nav-section">
-                          <a href="{{ '/plans/index.html' | relative_url }}" class="nav-section-title" data-section="plans">Plans</a>
+                          <a href="{{ '/' | append: page.language | append: '/plans/index.html' | relative_url }}" class="nav-section-title" data-section="plans">Plans</a>
                           <div class="nav-items" id="plans">
-                              <a href="{{ '/plans/activation-codes.html' | relative_url }}">Activation Codes</a>
-                              <a href="{{ '/plans/assets-are-not-displayed-in-the-account.html' | relative_url }}">Assets Are Not Displayed</a>
-                              <a href="{{ '/plans/pricing-plans-conflicts.html' | relative_url }}">Pricing Plans Conflicts</a>
-                              <a href="{{ '/plans/suspending-service-for-a-device.html' | relative_url }}">Suspending Service</a>
+                              <a href="{{ '/' | append: page.language | append: '/plans/activation-codes.html' | relative_url }}">Activation Codes</a>
+                              <a href="{{ '/' | append: page.language | append: '/plans/assets-are-not-displayed-in-the-account.html' | relative_url }}">Assets Are Not Displayed</a>
+                              <a href="{{ '/' | append: page.language | append: '/plans/pricing-plans-conflicts.html' | relative_url }}">Pricing Plans Conflicts</a>
+                              <a href="{{ '/' | append: page.language | append: '/plans/suspending-service-for-a-device.html' | relative_url }}">Suspending Service</a>
                           </div>
                       </div>
                       
                       <div class="nav-section">
                           <div class="nav-section-title" data-section="other">Other</div>
                           <div class="nav-items" id="other">
-                              <a href="{{ '/reports.html' | relative_url }}">Reports</a>
-                              <a href="{{ '/resellers.html' | relative_url }}">Resellers</a>
+                              <a href="{{ '/' | append: page.language | append: '/reports.html' | relative_url }}">Reports</a>
+                              <a href="{{ '/' | append: page.language | append: '/resellers.html' | relative_url }}">Resellers</a>
                           </div>
                       </div>
                   </nav>
@@ -348,6 +496,25 @@ jobs:
                   document.addEventListener('DOMContentLoaded', function() {
                       const sectionTitles = document.querySelectorAll('.nav-section-title');
                       const currentPath = window.location.pathname;
+                      const languageSelector = document.getElementById('languageSelector');
+                      
+                      // Handle language selector change
+                      if (languageSelector) {
+                          languageSelector.addEventListener('change', function() {
+                              const newLang = this.value;
+                              const currentLang = '{{ page.language }}';
+                              
+                              // Replace language in current URL
+                              let newPath = currentPath.replace('/' + currentLang + '/', '/' + newLang + '/');
+                              
+                              // If we're at the root, redirect to the new language root
+                              if (currentPath.endsWith('/' + currentLang + '/') || currentPath.endsWith('/' + currentLang)) {
+                                  newPath = window.location.origin + window.location.pathname.replace(currentPath, '') + '/' + newLang + '/';
+                              }
+                              
+                              window.location.href = newPath;
+                          });
+                      }
                       
                       // Handle section title clicks
                       sectionTitles.forEach(title => {
@@ -447,6 +614,41 @@ jobs:
           
           plugins:
             - jekyll-seo-tag
+          
+          # Language defaults
+          defaults:
+            - scope:
+                path: "en"
+              values:
+                language: "en"
+                language_name: "English"
+            - scope:
+                path: "es"
+              values:
+                language: "es"
+                language_name: "Español"
+          EOF
+
+      - name: Create root index redirect
+        env:
+          LANGUAGES: ${{ steps.detect-languages.outputs.languages }}
+        run: |
+          # Get first language as default (should be 'en')
+          IFS=',' read -ra LANG_CODES <<< "$LANGUAGES"
+          default_lang="${LANG_CODES[0]}"
+          
+          cat > _site_source/index.html << EOF
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <meta charset="UTF-8">
+              <meta http-equiv="refresh" content="0; url={{ '/$default_lang/' | relative_url }}">
+              <title>Redirecting...</title>
+          </head>
+          <body>
+              <p>Redirecting to <a href="{{ '/$default_lang/' | relative_url }}">English documentation</a>...</p>
+          </body>
+          </html>
           EOF
 
       - name: Build with Jekyll

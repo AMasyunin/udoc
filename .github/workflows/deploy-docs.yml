@@ -21,289 +21,123 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: Detect and normalize language structures
-        id: detect-languages
+      - name: Process languages
         run: |
-          # Create site directory
           mkdir -p _site_source
           
-          # Detect all admin-panel folders and extract language codes
-          languages=""
-          language_names=""
+          # Process English (admin-panel)
+          if [ -d "docs/admin-panel" ]; then
+            echo "Processing English from docs/admin-panel"
+            mkdir -p "_site_source/en"
+            cp -r docs/admin-panel/* "_site_source/en/"
+          fi
           
-          # Create navigation structure file
-          nav_file="_site_source/_data/navigation.yml"
-          mkdir -p _site_source/_data
-          echo "# Navigation structure for each language" > $nav_file
-          
-          for dir in docs/admin-panel*; do
-            if [ -d "$dir" ]; then
-              basename_dir=$(basename "$dir")
-              if [ "$basename_dir" = "admin-panel" ]; then
-                # Default English
-                lang_code="en"
-                lang_name="English"
-              else
-                # Extract locale from admin-panel-{locale}
-                lang_code="${basename_dir#admin-panel-}"
-                case "$lang_code" in
-                  "es") lang_name="Español" ;;
-                  "ru") lang_name="Русский" ;;
-                  "fr") lang_name="Français" ;;
-                  "de") lang_name="Deutsch" ;;
-                  "it") lang_name="Italiano" ;;
-                  "pt") lang_name="Português" ;;
-                  *) lang_name="$(echo ${lang_code} | tr '[:lower:]' '[:upper:]')" ;;
-                esac
-              fi
+          # Process Spanish (admin-panel-es/admin-panel)
+          if [ -d "docs/admin-panel-es/admin-panel" ]; then
+            echo "Processing Spanish from docs/admin-panel-es/admin-panel"
+            mkdir -p "_site_source/es"
+            cp -r docs/admin-panel-es/admin-panel/* "_site_source/es/"
+          elif [ -d "docs/admin-panel-es" ]; then
+            echo "Processing Spanish from docs/admin-panel-es (direct)"
+            mkdir -p "_site_source/es"
+            cp -r docs/admin-panel-es/* "_site_source/es/"
+          fi
+
+      - name: Fix file extensions and GitBook syntax
+        run: |
+          # Process both languages
+          for lang_dir in _site_source/*/; do
+            if [ -d "$lang_dir" ]; then
+              lang=$(basename "$lang_dir")
+              echo "Processing $lang"
               
-              echo "Found language: $lang_code ($lang_name) in $dir"
+              # Rename README.md to index.md
+              find "$lang_dir" -name "README.md" -exec sh -c '
+                dir=$(dirname "$1")
+                mv "$1" "$dir/index.md"
+                echo "Renamed $1 to $dir/index.md"
+              ' _ {} \;
               
-              if [ -z "$languages" ]; then
-                languages="$lang_code"
-                language_names="$lang_name"
-              else
-                languages="$languages,$lang_code"
-                language_names="$language_names,$lang_name"
-              fi
+              # Fix GitBook syntax
+              find "$lang_dir" -name "*.md" -type f -exec sed -i 's/{% hint style="[^"]*" %}/> **Note:** /g' {} \;
+              find "$lang_dir" -name "*.md" -type f -exec sed -i 's/{% endhint %}/\n/g' {} \;
+              find "$lang_dir" -name "*.md" -type f -exec sed -i 's/{% hint %}/> **Note:** /g' {} \;
+            fi
+          done
+
+      - name: Add front matter
+        run: |
+          # Add front matter to all markdown files
+          for lang_dir in _site_source/*/; do
+            if [ -d "$lang_dir" ]; then
+              lang=$(basename "$lang_dir")
               
-              # Determine the actual content directory
-              content_dir="$dir"
-              if [ -d "$dir/admin-panel" ] && [ "$lang_code" != "en" ]; then
-                content_dir="$dir/admin-panel"
-                echo "Using nested admin-panel structure for $lang_code"
-              fi
+              # Set language name
+              case "$lang" in
+                "en") lang_name="English" ;;
+                "es") lang_name="Español" ;;
+                "ru") lang_name="Русский" ;;
+                "fr") lang_name="Français" ;;
+                *) lang_name="$lang" ;;
+              esac
               
-              # Scan directory structure for this language
-              echo "" >> $nav_file
-              echo "$lang_code:" >> $nav_file
-              echo "  language_name: \"$lang_name\"" >> $nav_file
-              echo "  sections:" >> $nav_file
+              echo "Adding front matter for $lang ($lang_name)"
               
-              # Look for main directories (skip files and attachments)
-              for subdir in "$content_dir"/*; do
-                if [ -d "$subdir" ]; then
-                  subdir_name=$(basename "$subdir")
+              # Process all markdown files
+              find "$lang_dir" -name "*.md" -type f | while read file; do
+                if ! head -n 1 "$file" | grep -q "^---$"; then
+                  # Determine title
+                  rel_path="${file#$lang_dir/}"
                   
-                  # Skip attachment directories
-                  if [ "$subdir_name" != "attachments" ]; then
-                    echo "    - folder: \"$subdir_name\"" >> $nav_file
-                    
-                    # Determine section title based on folder name
-                    case "$subdir_name" in
-                      "users"|"usuarios") echo "      title: \"Users\"" >> $nav_file ;;
-                      "devices"|"dispositivos") echo "      title: \"Devices\"" >> $nav_file ;;
-                      "settings"|"configuracion"|"ajustes") echo "      title: \"Settings\"" >> $nav_file ;;
-                      "plans"|"planes") echo "      title: \"Plans\"" >> $nav_file ;;
-                      *) 
-                        # Capitalize first letter and convert hyphens to spaces
-                        title=$(echo "$subdir_name" | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
-                        echo "      title: \"$title\"" >> $nav_file
-                        ;;
-                    esac
-                    
-                    # List files in this directory
-                    echo "      pages:" >> $nav_file
-                    for file in "$subdir"/*.md; do
-                      if [ -f "$file" ]; then
-                        filename=$(basename "$file" .md)
-                        if [ "$filename" != "README" ]; then
-                          # Generate page title from filename
-                          page_title=$(echo "$filename" | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
-                          echo "        - file: \"$filename.html\"" >> $nav_file
-                          echo "          title: \"$page_title\"" >> $nav_file
-                        fi
-                      fi
-                    done
+                  if [ "$(basename "$file")" = "index.md" ]; then
+                    if [ "$rel_path" = "index.md" ]; then
+                      title="Admin Panel"
+                    else
+                      # Section index
+                      dir_name=$(basename $(dirname "$file"))
+                      case "$dir_name" in
+                        "users"|"usuarios") title="Users" ;;
+                        "devices"|"dispositivos") title="Devices" ;;
+                        "settings"|"configuracion"|"ajustes") title="Settings" ;;
+                        "plans"|"planes") title="Plans" ;;
+                        *) title=$(echo "$dir_name" | sed 's/-/ /g' | sed 's/\b\w/\U&/g') ;;
+                      esac
+                    fi
+                  else
+                    # Regular page
+                    title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
                   fi
-                fi
-              done
-              
-              # Add root-level files
-              echo "  root_pages:" >> $nav_file
-              for file in "$content_dir"/*.md; do
-                if [ -f "$file" ]; then
-                  filename=$(basename "$file" .md)
-                  if [ "$filename" != "README" ] && [ "$filename" != "admin-panel-es" ]; then
-                    page_title=$(echo "$filename" | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
-                    echo "    - file: \"$filename.html\"" >> $nav_file
-                    echo "      title: \"$page_title\"" >> $nav_file
-                  fi
-                fi
-              done
-            fi
-          done
-          
-          echo "languages=$languages" >> $GITHUB_OUTPUT
-          echo "language_names=$language_names" >> $GITHUB_OUTPUT
-          echo "Detected languages: $languages"
-          echo "Language names: $language_names"
-          
-          echo "Generated navigation structure:"
-          cat $nav_file
-
-      - name: Process each language with structure normalization
-        env:
-          LANGUAGES: ${{ steps.detect-languages.outputs.languages }}
-          LANGUAGE_NAMES: ${{ steps.detect-languages.outputs.language_names }}
-        run: |
-          IFS=',' read -ra LANG_CODES <<< "$LANGUAGES"
-          IFS=',' read -ra LANG_NAMES <<< "$LANGUAGE_NAMES"
-          
-          for i in "${!LANG_CODES[@]}"; do
-            lang_code="${LANG_CODES[$i]}"
-            lang_name="${LANG_NAMES[$i]}"
-            
-            echo "Processing language: $lang_code ($lang_name)"
-            
-            # Determine source directory
-            if [ "$lang_code" = "en" ]; then
-              source_dir="docs/admin-panel"
-            else
-              source_dir="docs/admin-panel-$lang_code"
-            fi
-            
-            # Create language-specific directory
-            lang_dir="_site_source/$lang_code"
-            mkdir -p "$lang_dir"
-            
-            # Handle nested admin-panel structure for non-English languages
-            if [ "$lang_code" != "en" ] && [ -d "$source_dir/admin-panel" ]; then
-              echo "Copying from nested structure: $source_dir/admin-panel -> $lang_dir"
-              cp -r "$source_dir/admin-panel"/* "$lang_dir/"
-            else
-              echo "Copying from direct structure: $source_dir -> $lang_dir"
-              cp -r "$source_dir"/* "$lang_dir/"
-            fi
-            
-            # Debug: Show what was copied
-            echo "Files copied to $lang_dir:"
-            ls -la "$lang_dir/" | head -10
-            
-            # Rename all README.md files to index.md
-            find "$lang_dir" -name "README.md" -exec sh -c '
-              dir=$(dirname "$1")
-              mv "$1" "$dir/index.md"
-              echo "Renamed $1 to $dir/index.md"
-            ' _ {} \;
-            
-            # Fix GitBook syntax
-            find "$lang_dir" -name "*.md" -type f -exec sed -i 's/{% hint style="[^"]*" %}/> **Note:** /g' {} \;
-            find "$lang_dir" -name "*.md" -type f -exec sed -i 's/{% endhint %}/\n/g' {} \;
-            find "$lang_dir" -name "*.md" -type f -exec sed -i 's/{% hint %}/> **Note:** /g' {} \;
-          done
-
-      - name: Add front matter to all pages
-        env:
-          LANGUAGES: ${{ steps.detect-languages.outputs.languages }}
-          LANGUAGE_NAMES: ${{ steps.detect-languages.outputs.language_names }}
-        run: |
-          IFS=',' read -ra LANG_CODES <<< "$LANGUAGES"
-          IFS=',' read -ra LANG_NAMES <<< "$LANGUAGE_NAMES"
-          
-          for i in "${!LANG_CODES[@]}"; do
-            lang_code="${LANG_CODES[$i]}"
-            lang_name="${LANG_NAMES[$i]}"
-            lang_dir="_site_source/$lang_code"
-            
-            echo "Adding front matter for $lang_code"
-            
-            # Root index page - create if missing
-            if [ -f "$lang_dir/index.md" ]; then
-              cat > temp_index.md << EOF
-          ---
-          layout: default
-          title: "Admin Panel"
-          language: "$lang_code"
-          language_name: "$lang_name"
-          ---
-          
-          EOF
-              tail -n +1 "$lang_dir/index.md" >> temp_index.md
-              mv temp_index.md "$lang_dir/index.md"
-            else
-              # Create default index page if missing
-              echo "Creating default index page for $lang_code"
-              cat > "$lang_dir/index.md" << EOF
-          ---
-          layout: default
-          title: "Admin Panel"
-          language: "$lang_code"
-          language_name: "$lang_name"
-          ---
-          
-          # Admin Panel Documentation
-          
-          Welcome to the Admin Panel documentation.
-          
-          Use the navigation on the left to browse through the available sections.
-          EOF
-            fi
-            
-            # Add front matter to all other markdown files
-            find "$lang_dir" -name "*.md" -not -path "$lang_dir/index.md" -type f | while read file; do
-              if ! head -n 1 "$file" | grep -q "^---$"; then
-                # Determine title based on file type and path
-                rel_path="${file#$lang_dir/}"
-                
-                # Check if it's a directory index file
-                if [[ "$rel_path" =~ /index\.md$ ]]; then
-                  # Section index files: use directory name
-                  dir_name=$(basename $(dirname "$file"))
-                  case "$dir_name" in
-                    "users"|"usuarios") title="Users" ;;
-                    "devices"|"dispositivos") title="Devices" ;;
-                    "settings"|"configuracion"|"ajustes") title="Settings" ;;
-                    "plans"|"planes") title="Plans" ;;
-                    *) title=$(echo "$dir_name" | sed 's/-/ /g' | sed 's/\b\w/\U&/g') ;;
-                  esac
-                else
-                  # Sub-pages: use filename
-                  title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
-                fi
-                
-                cat > temp_file.md << EOF
+                  
+                  # Add front matter
+                  cat > temp_file.md << EOF
           ---
           layout: default
           title: "$title"
-          language: "$lang_code"
+          language: "$lang"
           language_name: "$lang_name"
           ---
           
           EOF
-                cat "$file" >> temp_file.md
-                mv temp_file.md "$file"
-              fi
-            done
+                  cat "$file" >> temp_file.md
+                  mv temp_file.md "$file"
+                fi
+              done
+            fi
           done
 
-      - name: Create language configuration
-        env:
-          LANGUAGES: ${{ steps.detect-languages.outputs.languages }}
-          LANGUAGE_NAMES: ${{ steps.detect-languages.outputs.language_names }}
+      - name: Create data files
         run: |
-          # Create languages.yml for Jekyll
+          mkdir -p _site_source/_data
+          
+          # Create languages.yml
           cat > _site_source/_data/languages.yml << 'EOF'
-          # Available languages configuration
+          - code: "en"
+            name: "English"
+          - code: "es"
+            name: "Español"
           EOF
-          
-          IFS=',' read -ra LANG_CODES <<< "$LANGUAGES"
-          IFS=',' read -ra LANG_NAMES <<< "$LANGUAGE_NAMES"
-          
-          for i in "${!LANG_CODES[@]}"; do
-            lang_code="${LANG_CODES[$i]}"
-            lang_name="${LANG_NAMES[$i]}"
-            
-            cat >> _site_source/_data/languages.yml << EOF
-          - code: "$lang_code"
-            name: "$lang_name"
-          EOF
-          done
-          
-          echo "Created languages configuration:"
-          cat _site_source/_data/languages.yml
 
-      - name: Create custom Jekyll layout with dynamic navigation
+      - name: Create Jekyll layout
         run: |
           mkdir -p _site_source/_layouts
           cat > _site_source/_layouts/default.html << 'EOF'
@@ -532,30 +366,88 @@ jobs:
                           </div>
                       </div>
                       
-                      <!-- Dynamic navigation based on current language structure -->
-                      {% assign current_lang_nav = site.data.navigation[page.language] %}
-                      
                       <!-- Getting Started section -->
                       <div class="nav-section">
                           <a href="{{ site.baseurl }}/{{ page.language }}/index.html" class="nav-section-title" data-section="getting-started">Getting Started</a>
                           <div class="nav-items" id="getting-started">
-                              {% for root_page in current_lang_nav.root_pages %}
-                              <a href="{{ site.baseurl }}/{{ page.language }}/{{ root_page.file }}">{{ root_page.title }}</a>
-                              {% endfor %}
+                              <a href="{{ site.baseurl }}/{{ page.language }}/access.html">Access</a>
                           </div>
                       </div>
                       
-                      <!-- Dynamic sections based on detected folder structure -->
-                      {% for section in current_lang_nav.sections %}
+                      <!-- Users section -->
                       <div class="nav-section">
-                          <a href="{{ site.baseurl }}/{{ page.language }}/{{ section.folder }}/index.html" class="nav-section-title" data-section="{{ section.folder }}">{{ section.title }}</a>
-                          <div class="nav-items" id="{{ section.folder }}">
-                              {% for page_item in section.pages %}
-                              <a href="{{ site.baseurl }}/{{ page.language }}/{{ section.folder }}/{{ page_item.file }}">{{ page_item.title }}</a>
-                              {% endfor %}
+                          {% if page.language == 'es' %}
+                          <a href="{{ site.baseurl }}/{{ page.language }}/usuarios/index.html" class="nav-section-title" data-section="usuarios">Users</a>
+                          <div class="nav-items" id="usuarios">
+                              <a href="{{ site.baseurl }}/{{ page.language }}/usuarios/crear-usuario.html">Create User</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/usuarios/eliminar-usuario.html">Delete User</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/usuarios/detalles-del-usuario.html">User Details</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/usuarios/operaciones-de-facturacin.html">Billing Operations</a>
+                          </div>
+                          {% else %}
+                          <a href="{{ site.baseurl }}/{{ page.language }}/users/index.html" class="nav-section-title" data-section="users">Users</a>
+                          <div class="nav-items" id="users">
+                              <a href="{{ site.baseurl }}/{{ page.language }}/users/billing-operations.html">Billing Operations</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/users/create-user.html">Create User</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/users/delete-user.html">Delete User</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/users/user-details.html">User Details</a>
+                          </div>
+                          {% endif %}
+                      </div>
+                      
+                      <!-- Devices section -->
+                      <div class="nav-section">
+                          {% if page.language == 'es' %}
+                          <a href="{{ site.baseurl }}/{{ page.language }}/dispositivos/index.html" class="nav-section-title" data-section="dispositivos">Devices</a>
+                          <div class="nav-items" id="dispositivos">
+                              <a href="{{ site.baseurl }}/{{ page.language }}/dispositivos/air-console.html">Air Console</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/dispositivos/operaciones-bsicas.html">Basic Operations</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/dispositivos/activacin-masiva.html">Bulk Activation</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/dispositivos/clones-de-rastreadores.html">Tracker Clones</a>
+                          </div>
+                          {% else %}
+                          <a href="{{ site.baseurl }}/{{ page.language }}/devices/index.html" class="nav-section-title" data-section="devices">Devices</a>
+                          <div class="nav-items" id="devices">
+                              <a href="{{ site.baseurl }}/{{ page.language }}/devices/air-console.html">Air Console</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/devices/basic-operations.html">Basic Operations</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/devices/bulk-activation.html">Bulk Activation</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/devices/change-plan.html">Change Plan</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/devices/tracker-clones.html">Tracker Clones</a>
+                          </div>
+                          {% endif %}
+                      </div>
+                      
+                      <!-- Settings section -->
+                      <div class="nav-section">
+                          <a href="{{ site.baseurl }}/{{ page.language }}/settings/index.html" class="nav-section-title" data-section="settings">Settings</a>
+                          <div class="nav-items" id="settings">
+                              <a href="{{ site.baseurl }}/{{ page.language }}/settings/branding-options.html">Branding Options</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/settings/custom-menu-editor.html">Custom Menu Editor</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/settings/domain-name.html">Domain Name</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/settings/payment-gateway.html">Payment Gateway</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/settings/two-factor-authentication.html">Two Factor Authentication</a>
                           </div>
                       </div>
-                      {% endfor %}
+                      
+                      <!-- Plans section -->
+                      <div class="nav-section">
+                          <a href="{{ site.baseurl }}/{{ page.language }}/plans/index.html" class="nav-section-title" data-section="plans">Plans</a>
+                          <div class="nav-items" id="plans">
+                              <a href="{{ site.baseurl }}/{{ page.language }}/plans/activation-codes.html">Activation Codes</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/plans/assets-are-not-displayed-in-the-account.html">Assets Are Not Displayed</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/plans/pricing-plans-conflicts.html">Pricing Plans Conflicts</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/plans/suspending-service-for-a-device.html">Suspending Service</a>
+                          </div>
+                      </div>
+                      
+                      <!-- Other section -->
+                      <div class="nav-section">
+                          <div class="nav-section-title" data-section="other">Other</div>
+                          <div class="nav-items" id="other">
+                              <a href="{{ site.baseurl }}/{{ page.language }}/reports.html">Reports</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/resellers.html">Resellers</a>
+                          </div>
+                      </div>
                   </nav>
                   
                   <main class="content">
@@ -582,6 +474,15 @@ jobs:
                                   pathAfterLang = pathAfterLang.split('/' + currentLang + '/')[1] || 'index.html';
                               }
                               
+                              // Simple mapping for different folder structures
+                              if (currentLang === 'en' && newLang === 'es') {
+                                  pathAfterLang = pathAfterLang.replace('users/', 'usuarios/');
+                                  pathAfterLang = pathAfterLang.replace('devices/', 'dispositivos/');
+                              } else if (currentLang === 'es' && newLang === 'en') {
+                                  pathAfterLang = pathAfterLang.replace('usuarios/', 'users/');
+                                  pathAfterLang = pathAfterLang.replace('dispositivos/', 'devices/');
+                              }
+                              
                               // Construct new URL
                               const newPath = baseUrl + '/' + newLang + '/' + pathAfterLang;
                               window.location.href = newPath;
@@ -594,7 +495,6 @@ jobs:
                           const section = document.getElementById(sectionId);
                           
                           if (section && !title.href) {
-                              // Only add click handler if it's not a link
                               title.addEventListener('click', function(e) {
                                   e.preventDefault();
                                   toggleSection(sectionId);
@@ -605,13 +505,12 @@ jobs:
                       // Auto-open section and highlight current page
                       let sectionToOpen = null;
                       
-                      // Use path-based detection for section opening
-                      const pathParts = currentPath.split('/');
-                      if (pathParts.length > 3) {
-                          sectionToOpen = pathParts[pathParts.length - 2]; // Get folder name
-                      } else {
-                          sectionToOpen = 'getting-started';
-                      }
+                      if (currentPath.includes('/users/') || currentPath.includes('/usuarios/')) sectionToOpen = '{{ page.language }}' === 'es' ? 'usuarios' : 'users';
+                      else if (currentPath.includes('/devices/') || currentPath.includes('/dispositivos/')) sectionToOpen = '{{ page.language }}' === 'es' ? 'dispositivos' : 'devices';
+                      else if (currentPath.includes('/settings/')) sectionToOpen = 'settings';
+                      else if (currentPath.includes('/plans/')) sectionToOpen = 'plans';
+                      else if (currentPath.includes('/reports') || currentPath.includes('/resellers')) sectionToOpen = 'other';
+                      else sectionToOpen = 'getting-started';
                       
                       if (sectionToOpen && document.getElementById(sectionToOpen)) {
                           openSection(sectionToOpen);
@@ -630,10 +529,10 @@ jobs:
                       const section = document.getElementById(sectionId);
                       const title = document.querySelector(`[data-section="${sectionId}"]`);
                       
-                      if (section.classList.contains('show')) {
+                      if (section && section.classList.contains('show')) {
                           section.classList.remove('show');
-                          title.classList.remove('active');
-                      } else {
+                          if (title) title.classList.remove('active');
+                      } else if (section) {
                           // Close other sections
                           document.querySelectorAll('.nav-items').forEach(item => {
                               item.classList.remove('show');
@@ -644,7 +543,7 @@ jobs:
                           
                           // Open current section
                           section.classList.add('show');
-                          title.classList.add('active');
+                          if (title) title.classList.add('active');
                       }
                   }
                   
@@ -688,10 +587,6 @@ jobs:
           plugins:
             - jekyll-seo-tag
           
-          # Collections for language handling
-          collections_dir: "."
-          
-          # Language defaults - simplified for debugging
           defaults:
             - scope:
                 path: ""
@@ -700,110 +595,128 @@ jobs:
           EOF
 
       - name: Create root index redirect
-        env:
-          LANGUAGES: ${{ steps.detect-languages.outputs.languages }}
         run: |
-          # Get first language as default (should be 'en')
-          IFS=',' read -ra LANG_CODES <<< "$LANGUAGES"
-          default_lang="${LANG_CODES[0]}"
-          
-          cat > _site_source/index.html << EOF
+          cat > _site_source/index.html << 'EOF'
           ---
           ---
           <!DOCTYPE html>
           <html>
           <head>
               <meta charset="UTF-8">
-              <meta http-equiv="refresh" content="0; url={{ site.baseurl }}/$default_lang/">
-              <link rel="canonical" href="{{ site.baseurl }}/$default_lang/" />
+              <meta http-equiv="refresh" content="0; url={{ site.baseurl }}/en/">
+              <link rel="canonical" href="{{ site.baseurl }}/en/" />
               <title>Redirecting to Admin Panel Documentation</title>
           </head>
           <body>
               <h1>Admin Panel Documentation</h1>
-              <p>Redirecting to <a href="{{ site.baseurl }}/$default_lang/">English documentation</a>...</p>
+              <p>Redirecting to <a href="{{ site.baseurl }}/en/">English documentation</a>...</p>
               <script>
-                  window.location.href = "{{ site.baseurl }}/$default_lang/";
+                  window.location.href = "{{ site.baseurl }}/en/";
               </script>
           </body>
           </html>
           EOF
 
-      - name: Debug - Show original source structure
+      - name: Ensure index files exist
         run: |
-          echo "=== English source structure ==="
-          if [ -d "docs/admin-panel" ]; then
-            echo "English directories:"
-            find docs/admin-panel -type d -mindepth 1 -maxdepth 1 | sort
-            echo "English files:"
-            find docs/admin-panel -name "*.md" -maxdepth 1 | sort
-          fi
-          echo ""
-          echo "=== Spanish source structure ==="
-          if [ -d "docs/admin-panel-es" ]; then  
-            echo "Spanish top level:"
-            ls -la docs/admin-panel-es/
-            if [ -d "docs/admin-panel-es/admin-panel" ]; then
-              echo "Spanish nested admin-panel directories:"
-              find docs/admin-panel-es/admin-panel -type d -mindepth 1 -maxdepth 1 | sort
-              echo "Spanish nested admin-panel files:"
-              find docs/admin-panel-es/admin-panel -name "*.md" -maxdepth 1 | sort
+          # Create missing index files
+          for lang_dir in _site_source/*/; do
+            if [ -d "$lang_dir" ]; then
+              lang=$(basename "$lang_dir")
+              
+              # Root index
+              if [ ! -f "$lang_dir/index.md" ]; then
+                echo "Creating root index for $lang"
+                case "$lang" in
+                  "en") lang_name="English" ;;
+                  "es") lang_name="Español" ;;
+                  *) lang_name="$lang" ;;
+                esac
+                
+                cat > "$lang_dir/index.md" << EOF
+          ---
+          layout: default
+          title: "Admin Panel"
+          language: "$lang"
+          language_name: "$lang_name"
+          ---
+          
+          # Admin Panel Documentation
+          
+          Welcome to the Admin Panel documentation.
+          
+          Use the navigation on the left to browse through the available sections.
+          EOF
+              fi
+              
+              # Section index files
+              for section_dir in "$lang_dir"*/; do
+                if [ -d "$section_dir" ] && [ "$(basename "$section_dir")" != "attachments" ]; then
+                  if [ ! -f "$section_dir/index.md" ]; then
+                    section_name=$(basename "$section_dir")
+                    echo "Creating section index for $lang/$section_name"
+                    
+                    case "$section_name" in
+                      "users"|"usuarios") title="Users" ;;
+                      "devices"|"dispositivos") title="Devices" ;;
+                      "settings"|"configuracion") title="Settings" ;;
+                      "plans"|"planes") title="Plans" ;;
+                      *) title=$(echo "$section_name" | sed 's/-/ /g' | sed 's/\b\w/\U&/g') ;;
+                    esac
+                    
+                    case "$lang" in
+                      "en") lang_name="English" ;;
+                      "es") lang_name="Español" ;;
+                      *) lang_name="$lang" ;;
+                    esac
+                    
+                    cat > "$section_dir/index.md" << EOF
+          ---
+          layout: default
+          title: "$title"
+          language: "$lang"
+          language_name: "$lang_name"
+          ---
+          
+          # $title
+          
+          This section contains documentation for $title management.
+          EOF
+                  fi
+                fi
+              done
             fi
-          fi
+          done
+
+      - name: Debug final structure
+        run: |
+          echo "=== Generated structure ==="
+          find _site_source -name "*.md" | sort
+          
           echo ""
-          echo "=== Final Navigation Structure ==="
-          cat _site_source/_data/navigation.yml
-          echo ""
-          echo "=== English Structure ==="
-          if [ -d "_site_source/en" ]; then
-            echo "English root files:"
-            ls -la _site_source/en/*.md 2>/dev/null || echo "No English root files"
-            echo "English directories:"
-            find _site_source/en -type d -mindepth 1 | head -5
-            echo "English sample files:"
-            find _site_source/en -name "*.md" | head -5
-          fi
-          echo ""
-          echo "=== Spanish Structure ==="
-          if [ -d "_site_source/es" ]; then
-            echo "Spanish root files:"
-            ls -la _site_source/es/*.md 2>/dev/null || echo "No Spanish root files"
-            echo "Spanish directories:"
-            find _site_source/es -type d -mindepth 1 | head -5
-            echo "Spanish sample files:"
-            find _site_source/es -name "*.md" | head -5
-          fi
+          echo "=== Language files check ==="
+          for lang in en es; do
+            echo "=== $lang ==="
+            if [ -f "_site_source/$lang/index.md" ]; then
+              echo "✅ $lang/index.md exists"
+            else
+              echo "❌ $lang/index.md missing"
+            fi
+            
+            for section in users usuarios devices dispositivos settings plans; do
+              if [ -f "_site_source/$lang/$section/index.md" ]; then
+                echo "✅ $lang/$section/index.md exists"
+              elif [ -d "_site_source/$lang/$section" ]; then
+                echo "❌ $lang/$section/index.md missing (dir exists)"
+              fi
+            done
+          done
 
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1
         with:
           source: ./_site_source
           destination: ./_site
-
-      - name: Debug - Show built structure
-        run: |
-          echo "=== Built Spanish Files ==="
-          if [ -d "_site/es" ]; then
-            find _site/es -name "*.html" | head -10
-            echo ""
-            echo "=== Spanish index.html check ==="
-            if [ -f "_site/es/index.html" ]; then
-              echo "Spanish index.html EXISTS"
-              echo "First few lines:"
-              head -5 _site/es/index.html
-            else
-              echo "Spanish index.html MISSING"
-            fi
-            echo ""
-            echo "=== Spanish usuarios check ==="
-            if [ -d "_site/es/usuarios" ]; then
-              echo "Spanish usuarios directory EXISTS"
-              ls -la _site/es/usuarios/
-            else
-              echo "Spanish usuarios directory MISSING"
-            fi
-          else
-            echo "Spanish directory completely missing from built site"
-          fi
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

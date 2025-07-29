@@ -21,7 +21,7 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: Detect available languages
+      - name: Detect available languages and scan structure
         id: detect-languages
         run: |
           # Create site directory
@@ -30,6 +30,11 @@ jobs:
           # Detect all admin-panel folders and extract language codes
           languages=""
           language_names=""
+          
+          # Create navigation structure file
+          nav_file="_site_source/_data/navigation.yml"
+          mkdir -p _site_source/_data
+          echo "# Navigation structure for each language" > $nav_file
           
           for dir in docs/admin-panel*; do
             if [ -d "$dir" ]; then
@@ -61,6 +66,64 @@ jobs:
                 languages="$languages,$lang_code"
                 language_names="$language_names,$lang_name"
               fi
+              
+              # Scan directory structure for this language
+              echo "" >> $nav_file
+              echo "$lang_code:" >> $nav_file
+              echo "  language_name: \"$lang_name\"" >> $nav_file
+              echo "  sections:" >> $nav_file
+              
+              # Look for main directories (skip files and attachments)
+              for subdir in "$dir"/*; do
+                if [ -d "$subdir" ]; then
+                  subdir_name=$(basename "$subdir")
+                  
+                  # Skip attachment directories
+                  if [ "$subdir_name" != "attachments" ]; then
+                    echo "    - folder: \"$subdir_name\"" >> $nav_file
+                    
+                    # Determine section title based on folder name
+                    case "$subdir_name" in
+                      "users"|"usuarios") echo "      title: \"Users\"" >> $nav_file ;;
+                      "devices"|"dispositivos") echo "      title: \"Devices\"" >> $nav_file ;;
+                      "settings"|"configuracion"|"ajustes") echo "      title: \"Settings\"" >> $nav_file ;;
+                      "plans"|"planes") echo "      title: \"Plans\"" >> $nav_file ;;
+                      *) 
+                        # Capitalize first letter and convert hyphens to spaces
+                        title=$(echo "$subdir_name" | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+                        echo "      title: \"$title\"" >> $nav_file
+                        ;;
+                    esac
+                    
+                    # List files in this directory
+                    echo "      pages:" >> $nav_file
+                    for file in "$subdir"/*.md; do
+                      if [ -f "$file" ]; then
+                        filename=$(basename "$file" .md)
+                        if [ "$filename" != "README" ]; then
+                          # Generate page title from filename
+                          page_title=$(echo "$filename" | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+                          echo "        - file: \"$filename.html\"" >> $nav_file
+                          echo "          title: \"$page_title\"" >> $nav_file
+                        fi
+                      fi
+                    done
+                  fi
+                fi
+              done
+              
+              # Add root-level files
+              echo "  root_pages:" >> $nav_file
+              for file in "$dir"/*.md; do
+                if [ -f "$file" ]; then
+                  filename=$(basename "$file" .md)
+                  if [ "$filename" != "README" ] && [ "$filename" != "admin-panel-es" ]; then
+                    page_title=$(echo "$filename" | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+                    echo "    - file: \"$filename.html\"" >> $nav_file
+                    echo "      title: \"$page_title\"" >> $nav_file
+                  fi
+                fi
+              done
             fi
           done
           
@@ -68,6 +131,9 @@ jobs:
           echo "language_names=$language_names" >> $GITHUB_OUTPUT
           echo "Detected languages: $languages"
           echo "Language names: $language_names"
+          
+          echo "Generated navigation structure:"
+          cat $nav_file
 
       - name: Process each language
         env:
@@ -145,10 +211,18 @@ jobs:
               if ! head -n 1 "$file" | grep -q "^---$"; then
                 # Determine title based on file type and path
                 rel_path="${file#$lang_dir/}"
-                if [[ "$rel_path" =~ ^(users|devices|settings|plans)/index\.md$ ]]; then
+                
+                # Check if it's a directory index file
+                if [[ "$rel_path" =~ /index\.md$ ]]; then
                   # Section index files: use directory name
                   dir_name=$(basename $(dirname "$file"))
-                  title=$(echo "$dir_name" | sed 's/\b\w/\U&/g')
+                  case "$dir_name" in
+                    "users"|"usuarios") title="Users" ;;
+                    "devices"|"dispositivos") title="Devices" ;;
+                    "settings"|"configuracion"|"ajustes") title="Settings" ;;
+                    "plans"|"planes") title="Plans" ;;
+                    *) title=$(echo "$dir_name" | sed 's/-/ /g' | sed 's/\b\w/\U&/g') ;;
+                  esac
                 else
                   # Sub-pages: use filename
                   title=$(basename "$file" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
@@ -174,8 +248,6 @@ jobs:
           LANGUAGES: ${{ steps.detect-languages.outputs.languages }}
           LANGUAGE_NAMES: ${{ steps.detect-languages.outputs.language_names }}
         run: |
-          mkdir -p _site_source/_data
-          
           # Create languages.yml for Jekyll
           cat > _site_source/_data/languages.yml << 'EOF'
           # Available languages configuration
@@ -197,7 +269,7 @@ jobs:
           echo "Created languages configuration:"
           cat _site_source/_data/languages.yml
 
-      - name: Create custom Jekyll layout
+      - name: Create custom Jekyll layout with dynamic navigation
         run: |
           mkdir -p _site_source/_layouts
           cat > _site_source/_layouts/default.html << 'EOF'
@@ -426,65 +498,30 @@ jobs:
                           </div>
                       </div>
                       
+                      <!-- Dynamic navigation based on current language structure -->
+                      {% assign current_lang_nav = site.data.navigation[page.language] %}
+                      
+                      <!-- Getting Started section -->
                       <div class="nav-section">
                           <a href="{{ site.baseurl }}/{{ page.language }}/index.html" class="nav-section-title" data-section="getting-started">Getting Started</a>
                           <div class="nav-items" id="getting-started">
-                              <a href="{{ site.baseurl }}/{{ page.language }}/access.html">Access</a>
+                              {% for root_page in current_lang_nav.root_pages %}
+                              <a href="{{ site.baseurl }}/{{ page.language }}/{{ root_page.file }}">{{ root_page.title }}</a>
+                              {% endfor %}
                           </div>
                       </div>
                       
+                      <!-- Dynamic sections based on detected folder structure -->
+                      {% for section in current_lang_nav.sections %}
                       <div class="nav-section">
-                          <a href="{{ site.baseurl }}/{{ page.language }}/users/index.html" class="nav-section-title" data-section="users">Users</a>
-                          <div class="nav-items" id="users">
-                              <a href="{{ site.baseurl }}/{{ page.language }}/users/billing-operations.html">Billing Operations</a>
-                              <a href="{{ site.baseurl }}/{{ page.language }}/users/create-user.html">Create User</a>
-                              <a href="{{ site.baseurl }}/{{ page.language }}/users/delete-user.html">Delete User</a>
-                              <a href="{{ site.baseurl }}/{{ page.language }}/users/user-details.html">User Details</a>
+                          <a href="{{ site.baseurl }}/{{ page.language }}/{{ section.folder }}/index.html" class="nav-section-title" data-section="{{ section.folder }}">{{ section.title }}</a>
+                          <div class="nav-items" id="{{ section.folder }}">
+                              {% for page_item in section.pages %}
+                              <a href="{{ site.baseurl }}/{{ page.language }}/{{ section.folder }}/{{ page_item.file }}">{{ page_item.title }}</a>
+                              {% endfor %}
                           </div>
                       </div>
-                      
-                      <div class="nav-section">
-                          <a href="{{ site.baseurl }}/{{ page.language }}/devices/index.html" class="nav-section-title" data-section="devices">Devices</a>
-                          <div class="nav-items" id="devices">
-                              <a href="{{ site.baseurl }}/{{ page.language }}/devices/air-console.html">Air Console</a>
-                              <a href="{{ site.baseurl }}/{{ page.language }}/devices/basic-operations.html">Basic Operations</a>
-                              <a href="{{ site.baseurl }}/{{ page.language }}/devices/bulk-activation.html">Bulk Activation</a>
-                              <a href="{{ site.baseurl }}/{{ page.language }}/devices/change-plan.html">Change Plan</a>
-                              <a href="{{ site.baseurl }}/{{ page.language }}/devices/tracker-clones.html">Tracker Clones</a>
-                          </div>
-                      </div>
-                      
-                      <div class="nav-section">
-                          <a href="{{ site.baseurl }}/{{ page.language }}/settings/index.html" class="nav-section-title" data-section="settings">Settings</a>
-                          <div class="nav-items" id="settings">
-                              <a href="{{ site.baseurl }}/{{ page.language }}/settings/branding-options.html">Branding Options</a>
-                              <a href="{{ site.baseurl }}/{{ page.language }}/settings/custom-menu-editor.html">Custom Menu Editor</a>
-                              <a href="{{ site.baseurl }}/{{ page.language }}/settings/domain-name.html">Domain Name</a>
-                              <a href="{{ site.baseurl }}/{{ page.language }}/settings/payment-gateway.html">Payment Gateway</a>
-                              <a href="{{ site.baseurl }}/{{ page.language }}/settings/two-factor-authentication.html">Two Factor Authentication</a>
-                              <a href="{{ site.baseurl }}/{{ page.language }}/settings/maps/index.html">Maps</a>
-                              <a href="{{ site.baseurl }}/{{ page.language }}/settings/messaging-gateways/index.html">Messaging Gateways</a>
-                              <a href="{{ site.baseurl }}/{{ page.language }}/settings/service-preferences/index.html">Service Preferences</a>
-                          </div>
-                      </div>
-                      
-                      <div class="nav-section">
-                          <a href="{{ site.baseurl }}/{{ page.language }}/plans/index.html" class="nav-section-title" data-section="plans">Plans</a>
-                          <div class="nav-items" id="plans">
-                              <a href="{{ site.baseurl }}/{{ page.language }}/plans/activation-codes.html">Activation Codes</a>
-                              <a href="{{ site.baseurl }}/{{ page.language }}/plans/assets-are-not-displayed-in-the-account.html">Assets Are Not Displayed</a>
-                              <a href="{{ site.baseurl }}/{{ page.language }}/plans/pricing-plans-conflicts.html">Pricing Plans Conflicts</a>
-                              <a href="{{ site.baseurl }}/{{ page.language }}/plans/suspending-service-for-a-device.html">Suspending Service</a>
-                          </div>
-                      </div>
-                      
-                      <div class="nav-section">
-                          <div class="nav-section-title" data-section="other">Other</div>
-                          <div class="nav-items" id="other">
-                              <a href="{{ site.baseurl }}/{{ page.language }}/reports.html">Reports</a>
-                              <a href="{{ site.baseurl }}/{{ page.language }}/resellers.html">Resellers</a>
-                          </div>
-                      </div>
+                      {% endfor %}
                   </nav>
                   
                   <main class="content">
@@ -523,7 +560,7 @@ jobs:
                           const section = document.getElementById(sectionId);
                           
                           if (section && !title.href) {
-                              // Only add click handler if it's not a link (like "Other")
+                              // Only add click handler if it's not a link
                               title.addEventListener('click', function(e) {
                                   e.preventDefault();
                                   toggleSection(sectionId);
@@ -534,14 +571,15 @@ jobs:
                       // Auto-open section and highlight current page
                       let sectionToOpen = null;
                       
-                      if (currentPath.includes('/users/')) sectionToOpen = 'users';
-                      else if (currentPath.includes('/devices/')) sectionToOpen = 'devices';
-                      else if (currentPath.includes('/settings/')) sectionToOpen = 'settings';
-                      else if (currentPath.includes('/plans/')) sectionToOpen = 'plans';
-                      else if (currentPath.includes('/reports') || currentPath.includes('/resellers')) sectionToOpen = 'other';
-                      else sectionToOpen = 'getting-started';
+                      // Use path-based detection for section opening
+                      const pathParts = currentPath.split('/');
+                      if (pathParts.length > 3) {
+                          sectionToOpen = pathParts[pathParts.length - 2]; // Get folder name
+                      } else {
+                          sectionToOpen = 'getting-started';
+                      }
                       
-                      if (sectionToOpen) {
+                      if (sectionToOpen && document.getElementById(sectionToOpen)) {
                           openSection(sectionToOpen);
                           
                           // Highlight current page
@@ -659,18 +697,17 @@ jobs:
       - name: Debug - List generated files
         run: |
           echo "=== Generated file structure ==="
-          find _site_source -type f -name "*.html" -o -name "*.md" -o -name "*.yml" | head -20
+          find _site_source -type f -name "*.html" -o -name "*.md" -o -name "*.yml" | head -30
           echo ""
-          echo "=== Root files ==="
-          ls -la _site_source/
+          echo "=== Navigation structure ==="
+          cat _site_source/_data/navigation.yml
           echo ""
           echo "=== Language directories ==="
           ls -la _site_source/*/
           echo ""
-          echo "=== Sample index files ==="
-          if [ -f "_site_source/en/index.md" ]; then
-            echo "English index front matter:"
-            head -10 _site_source/en/index.md
+          echo "=== Spanish directory content ==="
+          if [ -d "_site_source/es" ]; then
+            find _site_source/es -name "*.md" | head -10
           fi
 
       - name: Build with Jekyll
@@ -682,14 +719,11 @@ jobs:
       - name: Debug - List built files
         run: |
           echo "=== Built site structure ==="
-          find _site -name "*.html" | head -20
+          find _site -name "*.html" | head -30
           echo ""
-          echo "=== Built root files ==="
-          ls -la _site/
-          echo ""
-          if [ -f "_site/index.html" ]; then
-            echo "=== Root index.html content ==="
-            cat _site/index.html
+          echo "=== Spanish built files ==="
+          if [ -d "_site/es" ]; then
+            find _site/es -name "*.html" | head -10
           fi
 
       - name: Upload artifact

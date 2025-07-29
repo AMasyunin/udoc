@@ -1,0 +1,3 @@
+# Dispositivos
+
+Esta sección proporciona información completa sobre la configuración de dispositivos en el Panel de Administración, con un enfoque específico en la configuración de dispositivos para un rendimiento óptimo. Ya sea que esté configurando nuevos dispositivos o gestionando los existentes, el Panel de Administración le proporciona las herramientas necesarias para manejar eficientemente las configuraciones de dispositivos.

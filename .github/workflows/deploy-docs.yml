@@ -73,8 +73,15 @@ jobs:
               echo "  language_name: \"$lang_name\"" >> $nav_file
               echo "  sections:" >> $nav_file
               
+              # Check if there's a nested admin-panel structure
+              scan_dir="$dir"
+              if [ -d "$dir/admin-panel" ]; then
+                scan_dir="$dir/admin-panel"
+                echo "  # Note: Using nested admin-panel structure" >> $nav_file
+              fi
+              
               # Look for main directories (skip files and attachments)
-              for subdir in "$dir"/*; do
+              for subdir in "$scan_dir"/*; do
                 if [ -d "$subdir" ]; then
                   subdir_name=$(basename "$subdir")
                   
@@ -114,7 +121,7 @@ jobs:
               
               # Add root-level files
               echo "  root_pages:" >> $nav_file
-              for file in "$dir"/*.md; do
+              for file in "$scan_dir"/*.md; do
                 if [ -f "$file" ]; then
                   filename=$(basename "$file" .md)
                   if [ "$filename" != "README" ] && [ "$filename" != "admin-panel-es" ]; then
@@ -160,8 +167,14 @@ jobs:
             lang_dir="_site_source/$lang_code"
             mkdir -p "$lang_dir"
             
-            # Copy content
-            cp -r "$source_dir"/* "$lang_dir/"
+            # Copy content - handle nested admin-panel structure
+            if [ -d "$source_dir/admin-panel" ]; then
+              # Spanish has nested admin-panel folder, copy from inside it
+              cp -r "$source_dir/admin-panel"/* "$lang_dir/"
+            else
+              # English has direct structure
+              cp -r "$source_dir"/* "$lang_dir/"
+            fi
             
             # Rename all README.md files to index.md
             find "$lang_dir" -name "README.md" -exec sh -c '
@@ -724,7 +737,19 @@ jobs:
           echo "=== Spanish built files ==="
           if [ -d "_site/es" ]; then
             find _site/es -name "*.html" | head -10
+            echo "Spanish index.html content:"
+            if [ -f "_site/es/index.html" ]; then
+              head -20 _site/es/index.html
+            else
+              echo "Spanish index.html NOT FOUND"
+            fi
+          else
+            echo "Spanish directory NOT FOUND in _site"
           fi
+          
+          echo ""
+          echo "=== All directories in _site ==="
+          ls -la _site/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

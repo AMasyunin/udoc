@@ -176,6 +176,10 @@ jobs:
               cp -r "$source_dir"/* "$lang_dir/"
             fi
             
+            # Debug: Show what was copied
+            echo "Files copied to $lang_dir:"
+            ls -la "$lang_dir/" | head -10
+            
             # Rename all README.md files to index.md
             find "$lang_dir" -name "README.md" -exec sh -c '
               dir=$(dirname "$1")
@@ -204,7 +208,7 @@ jobs:
             
             echo "Adding front matter for $lang_code"
             
-            # Root index page
+            # Root index page - create if missing
             if [ -f "$lang_dir/index.md" ]; then
               cat > temp_index.md << EOF
           ---
@@ -217,6 +221,23 @@ jobs:
           EOF
               tail -n +1 "$lang_dir/index.md" >> temp_index.md
               mv temp_index.md "$lang_dir/index.md"
+            else
+              # Create default index page if missing
+              echo "Creating default index page for $lang_code"
+              cat > "$lang_dir/index.md" << EOF
+          ---
+          layout: default
+          title: "Admin Panel"
+          language: "$lang_code"
+          language_name: "$lang_name"
+          ---
+          
+          # Admin Panel Documentation
+          
+          Welcome to the Admin Panel documentation.
+          
+          Use the navigation on the left to browse through the available sections.
+          EOF
             fi
             
             # Add front matter to all other markdown files
@@ -707,7 +728,27 @@ jobs:
           </html>
           EOF
 
-      - name: Debug - Show final structure
+      - name: Debug - Show original source structure
+        run: |
+          echo "=== English source structure ==="
+          if [ -d "docs/admin-panel" ]; then
+            echo "English directories:"
+            find docs/admin-panel -type d -mindepth 1 -maxdepth 1 | sort
+            echo "English files:"
+            find docs/admin-panel -name "*.md" -maxdepth 1 | sort
+          fi
+          echo ""
+          echo "=== Spanish source structure ==="
+          if [ -d "docs/admin-panel-es" ]; then  
+            echo "Spanish top level:"
+            ls -la docs/admin-panel-es/
+            if [ -d "docs/admin-panel-es/admin-panel" ]; then
+              echo "Spanish nested admin-panel directories:"
+              find docs/admin-panel-es/admin-panel -type d -mindepth 1 -maxdepth 1 | sort
+              echo "Spanish nested admin-panel files:"
+              find docs/admin-panel-es/admin-panel -name "*.md" -maxdepth 1 | sort
+            fi
+          fi
         run: |
           echo "=== Final Navigation Structure ==="
           cat _site_source/_data/navigation.yml

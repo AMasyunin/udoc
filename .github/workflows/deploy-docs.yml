@@ -73,11 +73,11 @@ jobs:
               echo "  language_name: \"$lang_name\"" >> $nav_file
               echo "  sections:" >> $nav_file
               
-              # Check if there's a nested admin-panel structure
+              # Check if there's a nested admin-panel structure (for non-English)
               scan_dir="$dir"
-              if [ -d "$dir/admin-panel" ]; then
+              if [ "$lang_code" != "en" ] && [ -d "$dir/admin-panel" ]; then
                 scan_dir="$dir/admin-panel"
-                echo "  # Note: Using nested admin-panel structure" >> $nav_file
+                echo "  # Note: Using nested admin-panel structure for $lang_code" >> $nav_file
               fi
               
               # Look for main directories (skip files and attachments)
@@ -119,7 +119,7 @@ jobs:
                 fi
               done
               
-              # Add root-level files
+              # Add root-level files from appropriate directory
               echo "  root_pages:" >> $nav_file
               for file in "$scan_dir"/*.md; do
                 if [ -f "$file" ]; then
@@ -167,13 +167,15 @@ jobs:
             lang_dir="_site_source/$lang_code"
             mkdir -p "$lang_dir"
             
-            # Copy content - handle nested admin-panel structure
-            if [ -d "$source_dir/admin-panel" ]; then
-              # Spanish has nested admin-panel folder, copy from inside it
+            # Copy content - handle nested admin-panel structure properly
+            if [ "$lang_code" != "en" ] && [ -d "$source_dir/admin-panel" ]; then
+              # Non-English languages may have nested admin-panel folder
               cp -r "$source_dir/admin-panel"/* "$lang_dir/"
+              echo "Copied from nested admin-panel structure for $lang_code"
             else
-              # English has direct structure
+              # English or languages with direct structure
               cp -r "$source_dir"/* "$lang_dir/"
+              echo "Copied from direct structure for $lang_code"
             fi
             
             # Rename all README.md files to index.md
@@ -718,9 +720,22 @@ jobs:
           echo "=== Language directories ==="
           ls -la _site_source/*/
           echo ""
+          echo "=== English directory content ==="
+          if [ -d "_site_source/en" ]; then
+            echo "English root files:"
+            ls -la _site_source/en/*.md 2>/dev/null || echo "No root files"
+            echo "English directories:"
+            ls -la _site_source/en/ | grep "^d"
+          fi
+          echo ""
           echo "=== Spanish directory content ==="
           if [ -d "_site_source/es" ]; then
-            find _site_source/es -name "*.md" | head -10
+            echo "Spanish root files:"
+            ls -la _site_source/es/*.md 2>/dev/null || echo "No root files"
+            echo "Spanish directories:"
+            ls -la _site_source/es/ | grep "^d"
+            echo "Spanish usuarios directory:"
+            ls -la _site_source/es/usuarios/ 2>/dev/null || echo "No usuarios directory"
           fi
 
       - name: Build with Jekyll

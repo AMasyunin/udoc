@@ -338,6 +338,13 @@ jobs:
                       padding: 0;
                   }
                   
+                  /* Fallback content styling */
+                  .content blockquote:first-of-type {
+                      background: #fff3cd;
+                      border-left-color: #ffc107;
+                      color: #856404;
+                  }
+                  
                   @media (max-width: 768px) {
                       .sidebar {
                           transform: translateX(-100%);
@@ -426,6 +433,9 @@ jobs:
                               <a href="{{ site.baseurl }}/{{ page.language }}/settings/domain-name.html">Domain Name</a>
                               <a href="{{ site.baseurl }}/{{ page.language }}/settings/payment-gateway.html">Payment Gateway</a>
                               <a href="{{ site.baseurl }}/{{ page.language }}/settings/two-factor-authentication.html">Two Factor Authentication</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/settings/maps/index.html">Maps</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/settings/messaging-gateways/index.html">Messaging Gateways</a>
+                              <a href="{{ site.baseurl }}/{{ page.language }}/settings/service-preferences/index.html">Service Preferences</a>
                           </div>
                       </div>
                       
@@ -617,6 +627,140 @@ jobs:
           </html>
           EOF
 
+      - name: Create fallback content for missing translations
+        run: |
+          echo "=== Creating fallback content ==="
+          
+          # Function to copy English content with Spanish front matter
+          copy_with_fallback() {
+            local en_file="$1"
+            local es_file="$2"
+            local title="$3"
+            
+            if [ -f "$en_file" ] && [ ! -f "$es_file" ]; then
+              echo "Creating fallback: $es_file (from $en_file)"
+              
+              # Create directory if it doesn't exist
+              mkdir -p "$(dirname "$es_file")"
+              
+              # Extract content without front matter from English file
+              if head -n 1 "$en_file" | grep -q "^---$"; then
+                # Has front matter, extract content after it
+                sed -n '/^---$/,/^---$/!p' "$en_file" | sed '1d' > temp_content.md
+              else
+                # No front matter, copy as is
+                cat "$en_file" > temp_content.md
+              fi
+              
+              # Create Spanish file with Spanish front matter but English content
+              cat > "$es_file" << EOF
+          ---
+          layout: default
+          title: "$title"
+          language: "es"
+          language_name: "Español"
+          fallback: true
+          ---
+          
+          > **Nota**: Esta página aún no ha sido traducida al español. Se muestra el contenido en inglés.
+          > 
+          > **Note**: This page has not been translated to Spanish yet. English content is shown.
+          
+          EOF
+              
+              # Add the English content
+              cat temp_content.md >> "$es_file"
+              rm -f temp_content.md
+            fi
+          }
+          
+          # Create fallbacks for missing Spanish pages
+          
+          # Root level pages
+          copy_with_fallback "_site_source/en/reports.md" "_site_source/es/reports.md" "Reports"
+          copy_with_fallback "_site_source/en/resellers.md" "_site_source/es/resellers.md" "Resellers"
+          
+          # Users section fallbacks
+          if [ -d "_site_source/en/users" ]; then
+            mkdir -p "_site_source/es/usuarios"
+            for en_file in _site_source/en/users/*.md; do
+              if [ -f "$en_file" ]; then
+                filename=$(basename "$en_file")
+                es_file="_site_source/es/usuarios/$filename"
+                
+                # Generate title from filename
+                title=$(basename "$filename" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+                copy_with_fallback "$en_file" "$es_file" "$title"
+              fi
+            done
+          fi
+          
+          # Devices section fallbacks  
+          if [ -d "_site_source/en/devices" ]; then
+            mkdir -p "_site_source/es/dispositivos"
+            for en_file in _site_source/en/devices/*.md; do
+              if [ -f "$en_file" ]; then
+                filename=$(basename "$en_file")
+                es_file="_site_source/es/dispositivos/$filename"
+                
+                # Generate title from filename
+                title=$(basename "$filename" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+                copy_with_fallback "$en_file" "$es_file" "$title"
+              fi
+            done
+          fi
+          
+          # Settings section fallbacks
+          if [ -d "_site_source/en/settings" ]; then
+            mkdir -p "_site_source/es/settings"
+            for en_file in _site_source/en/settings/*.md; do
+              if [ -f "$en_file" ]; then
+                filename=$(basename "$en_file")
+                es_file="_site_source/es/settings/$filename"
+                
+                # Generate title from filename
+                title=$(basename "$filename" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+                copy_with_fallback "$en_file" "$es_file" "$title"
+              fi
+            done
+            
+            # Handle nested settings directories
+            for en_subdir in _site_source/en/settings/*/; do
+              if [ -d "$en_subdir" ]; then
+                subdir_name=$(basename "$en_subdir")
+                es_subdir="_site_source/es/settings/$subdir_name"
+                mkdir -p "$es_subdir"
+                
+                for en_file in "$en_subdir"*.md; do
+                  if [ -f "$en_file" ]; then
+                    filename=$(basename "$en_file")
+                    es_file="$es_subdir/$filename"
+                    
+                    # Generate title from filename
+                    title=$(basename "$filename" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+                    copy_with_fallback "$en_file" "$es_file" "$title"
+                  fi
+                done
+              fi
+            done
+          fi
+          
+          # Plans section fallbacks
+          if [ -d "_site_source/en/plans" ]; then
+            mkdir -p "_site_source/es/plans"
+            for en_file in _site_source/en/plans/*.md; do
+              if [ -f "$en_file" ]; then
+                filename=$(basename "$en_file")
+                es_file="_site_source/es/plans/$filename"
+                
+                # Generate title from filename
+                title=$(basename "$filename" .md | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+                copy_with_fallback "$en_file" "$es_file" "$title"
+              fi
+            done
+          fi
+          
+          echo "=== Fallback creation complete ==="
       - name: Ensure index files exist
         run: |
           # Create missing index files
@@ -711,6 +855,11 @@ jobs:
               fi
             done
           done
+          
+          echo ""
+          echo "=== Fallback content check ==="
+          echo "Spanish fallback files created:"
+          find _site_source/es -name "*.md" -exec grep -l "fallback: true" {} \; | sort
 
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1

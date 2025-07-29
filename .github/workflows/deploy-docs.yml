@@ -21,7 +21,7 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: Detect available languages and scan structure
+      - name: Detect and normalize language structures
         id: detect-languages
         run: |
           # Create site directory
@@ -67,21 +67,21 @@ jobs:
                 language_names="$language_names,$lang_name"
               fi
               
+              # Determine the actual content directory
+              content_dir="$dir"
+              if [ -d "$dir/admin-panel" ] && [ "$lang_code" != "en" ]; then
+                content_dir="$dir/admin-panel"
+                echo "Using nested admin-panel structure for $lang_code"
+              fi
+              
               # Scan directory structure for this language
               echo "" >> $nav_file
               echo "$lang_code:" >> $nav_file
               echo "  language_name: \"$lang_name\"" >> $nav_file
               echo "  sections:" >> $nav_file
               
-              # Check if there's a nested admin-panel structure (for non-English)
-              scan_dir="$dir"
-              if [ "$lang_code" != "en" ] && [ -d "$dir/admin-panel" ]; then
-                scan_dir="$dir/admin-panel"
-                echo "  # Note: Using nested admin-panel structure for $lang_code" >> $nav_file
-              fi
-              
               # Look for main directories (skip files and attachments)
-              for subdir in "$scan_dir"/*; do
+              for subdir in "$content_dir"/*; do
                 if [ -d "$subdir" ]; then
                   subdir_name=$(basename "$subdir")
                   
@@ -119,9 +119,9 @@ jobs:
                 fi
               done
               
-              # Add root-level files from appropriate directory
+              # Add root-level files
               echo "  root_pages:" >> $nav_file
-              for file in "$scan_dir"/*.md; do
+              for file in "$content_dir"/*.md; do
                 if [ -f "$file" ]; then
                   filename=$(basename "$file" .md)
                   if [ "$filename" != "README" ] && [ "$filename" != "admin-panel-es" ]; then
@@ -142,7 +142,7 @@ jobs:
           echo "Generated navigation structure:"
           cat $nav_file
 
-      - name: Process each language
+      - name: Process each language with structure normalization
         env:
           LANGUAGES: ${{ steps.detect-languages.outputs.languages }}
           LANGUAGE_NAMES: ${{ steps.detect-languages.outputs.language_names }}
@@ -167,15 +167,13 @@ jobs:
             lang_dir="_site_source/$lang_code"
             mkdir -p "$lang_dir"
             
-            # Copy content - handle nested admin-panel structure properly
+            # Handle nested admin-panel structure for non-English languages
             if [ "$lang_code" != "en" ] && [ -d "$source_dir/admin-panel" ]; then
-              # Non-English languages may have nested admin-panel folder
+              echo "Copying from nested structure: $source_dir/admin-panel -> $lang_dir"
               cp -r "$source_dir/admin-panel"/* "$lang_dir/"
-              echo "Copied from nested admin-panel structure for $lang_code"
             else
-              # English or languages with direct structure
+              echo "Copying from direct structure: $source_dir -> $lang_dir"
               cp -r "$source_dir"/* "$lang_dir/"
-              echo "Copied from direct structure for $lang_code"
             fi
             
             # Rename all README.md files to index.md
@@ -709,33 +707,29 @@ jobs:
           </html>
           EOF
 
-      - name: Debug - List generated files
+      - name: Debug - Show final structure
         run: |
-          echo "=== Generated file structure ==="
-          find _site_source -type f -name "*.html" -o -name "*.md" -o -name "*.yml" | head -30
-          echo ""
-          echo "=== Navigation structure ==="
+          echo "=== Final Navigation Structure ==="
           cat _site_source/_data/navigation.yml
           echo ""
-          echo "=== Language directories ==="
-          ls -la _site_source/*/
-          echo ""
-          echo "=== English directory content ==="
+          echo "=== English Structure ==="
           if [ -d "_site_source/en" ]; then
             echo "English root files:"
-            ls -la _site_source/en/*.md 2>/dev/null || echo "No root files"
+            ls -la _site_source/en/*.md 2>/dev/null || echo "No English root files"
             echo "English directories:"
-            ls -la _site_source/en/ | grep "^d"
+            find _site_source/en -type d -mindepth 1 | head -5
+            echo "English sample files:"
+            find _site_source/en -name "*.md" | head -5
           fi
           echo ""
-          echo "=== Spanish directory content ==="
+          echo "=== Spanish Structure ==="
           if [ -d "_site_source/es" ]; then
             echo "Spanish root files:"
-            ls -la _site_source/es/*.md 2>/dev/null || echo "No root files"
+            ls -la _site_source/es/*.md 2>/dev/null || echo "No Spanish root files"
             echo "Spanish directories:"
-            ls -la _site_source/es/ | grep "^d"
-            echo "Spanish usuarios directory:"
-            ls -la _site_source/es/usuarios/ 2>/dev/null || echo "No usuarios directory"
+            find _site_source/es -type d -mindepth 1 | head -5
+            echo "Spanish sample files:"
+            find _site_source/es -name "*.md" | head -5
           fi
 
       - name: Build with Jekyll
@@ -744,27 +738,31 @@ jobs:
           source: ./_site_source
           destination: ./_site
 
-      - name: Debug - List built files
+      - name: Debug - Show built structure
         run: |
-          echo "=== Built site structure ==="
-          find _site -name "*.html" | head -30
-          echo ""
-          echo "=== Spanish built files ==="
+          echo "=== Built Spanish Files ==="
           if [ -d "_site/es" ]; then
             find _site/es -name "*.html" | head -10
-            echo "Spanish index.html content:"
+            echo ""
+            echo "=== Spanish index.html check ==="
             if [ -f "_site/es/index.html" ]; then
-              head -20 _site/es/index.html
+              echo "Spanish index.html EXISTS"
+              echo "First few lines:"
+              head -5 _site/es/index.html
             else
-              echo "Spanish index.html NOT FOUND"
+              echo "Spanish index.html MISSING"
+            fi
+            echo ""
+            echo "=== Spanish usuarios check ==="
+            if [ -d "_site/es/usuarios" ]; then
+              echo "Spanish usuarios directory EXISTS"
+              ls -la _site/es/usuarios/
+            else
+              echo "Spanish usuarios directory MISSING"
             fi
           else
-            echo "Spanish directory NOT FOUND in _site"
+            echo "Spanish directory completely missing from built site"
           fi
-          
-          echo ""
-          echo "=== All directories in _site ==="
-          ls -la _site/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
